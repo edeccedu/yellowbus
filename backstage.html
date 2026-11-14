@@ -26,7 +26,6 @@
         .btn-secondary { background: #424242; color: white; }
         .btn-secondary:hover { background: #616161; }
 
-        /* 車隊清單表格 */
         .bus-list { max-height: 350px; overflow-y: auto; margin-top: 10px; border: 1px solid #444; border-radius: 8px; }
         .bus-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #333; background: #242424; }
         .bus-item:hover { background: #2f2f2f; }
@@ -39,12 +38,10 @@
 <body>
 
 <div class="container">
-    <h1>🎛️ 黃色巴士大巡遊 ｜ 後台控制中心</h1>
+    <h1>🎛️ 黃色巴士大巡遊 ｜ 後台控制中心 (雲端版)</h1>
 
-    <!-- 快速導覽與頁面連結 -->
     <div class="card">
-        <h2>🔗 頁面快速連結</h2>
-        <p style="font-size: 14px; color: #bbb; margin-bottom: 8px;">請使用以下獨立網址在投影機或觀眾手機上開啟對應頁面：</p>
+        <h2>🔗 頁面快速連結 (複製給手機觀眾掃碼上傳)</h2>
         <div style="margin-bottom: 8px;">
             <strong>🖥️ 大銀幕播放端網址：</strong>
             <div class="link-box" id="screenLink">index.html</div>
@@ -55,14 +52,13 @@
         </div>
     </div>
 
-    <!-- 即時控制項 -->
     <div class="card">
         <h2>⚡ 巡遊動態控制</h2>
         
         <div class="control-row">
             <label>行駛速度：</label>
-            <input type="range" id="speedRange" min="0" max="3.0" step="0.1" value="1.0" oninput="updateSettings()">
-            <span class="value-badge" id="speedVal">1.0x</span>
+            <input type="range" id="speedRange" min="0" max="6.0" step="0.2" value="1.5" oninput="updateSettings()">
+            <span class="value-badge" id="speedVal">1.5x</span>
         </div>
 
         <div class="control-row">
@@ -79,88 +75,93 @@
 
         <div class="btn-group">
             <button class="btn btn-secondary" onclick="setSpeed(0)">⏸️ 暫停</button>
-            <button class="btn btn-secondary" onclick="setSpeed(0.5)">🐌 慢速 0.5x</button>
             <button class="btn btn-secondary" onclick="setSpeed(1.0)">▶️ 標準 1.0x</button>
-            <button class="btn btn-secondary" onclick="setSpeed(2.0)">🚀 極速 2.0x</button>
+            <button class="btn btn-secondary" onclick="setSpeed(2.5)">🚀 快速 2.5x</button>
+            <button class="btn btn-secondary" onclick="setSpeed(5.0)">🔥 飛快 5.0x</button>
         </div>
     </div>
 
-    <!-- 現有車隊管理 -->
     <div class="card">
         <h2>🚌 現有車隊清單管理 (<span id="totalBusesCount">0</span> 輛)</h2>
         <div class="btn-group" style="margin-bottom: 12px;">
             <button class="btn" onclick="addDemoBus()">＋ 新增一輛示範巴士</button>
             <button class="btn btn-danger" onclick="clearAllBuses()">🗑️ 清空全部巴士</button>
         </div>
-        <div class="bus-list" id="busListContainer">
-            <!-- 動態載入車隊 -->
-        </div>
+        <div class="bus-list" id="busListContainer"></div>
     </div>
 </div>
 
-<script>
-    const bc = new BroadcastChannel('bus_parade_channel');
+<!-- Firebase SDK 模組引入 -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 顯示完整連結
+    const firebaseConfig = {
+        apiKey: "AIzaSyC64OxwmFLAwmzcnl_BQaXM-_mC6PTFWHM",
+        authDomain: "yellowbus-12d4a.firebaseapp.com",
+        projectId: "yellowbus-12d4a",
+        storageBucket: "yellowbus-12d4a.firebasestorage.app",
+        messagingSenderId: "320843319933",
+        appId: "1:320843319933:web:86cc6e3a673baaccb57f14",
+        measurementId: "G-3KBP4ZWSBB"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     const currentUrl = window.location.href;
     const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
     document.getElementById('screenLink').innerText = baseUrl + 'index.html';
     document.getElementById('uploadLink').innerText = baseUrl + 'upload.html';
 
-    let settings = {
-        speed: 1.0,
-        maxBuses: 12,
-        busSize: 1.0
-    };
-
+    let currentSettings = { speed: 1.5, maxBuses: 12, busSize: 1.0 };
     let buses = [];
 
-    function loadData() {
-        const savedSt = localStorage.getItem('bus_parade_settings');
-        if (savedSt) {
-            try { settings = JSON.parse(savedSt); } catch(e) {}
+    // 監聽設定
+    onSnapshot(doc(db, "settings", "global"), (docSnap) => {
+        if (docSnap.exists()) {
+            currentSettings = docSnap.data();
+            document.getElementById('speedRange').value = currentSettings.speed ?? 1.5;
+            document.getElementById('speedVal').innerText = (currentSettings.speed ?? 1.5) + 'x';
+            document.getElementById('maxBusesRange').value = currentSettings.maxBuses ?? 12;
+            document.getElementById('maxBusesVal').innerText = (currentSettings.maxBuses ?? 12) + ' 輛';
+            document.getElementById('sizeRange').value = currentSettings.busSize ?? 1.0;
+            document.getElementById('sizeVal').innerText = (currentSettings.busSize ?? 1.0) + 'x';
         }
-        document.getElementById('speedRange').value = settings.speed;
-        document.getElementById('speedVal.innerText' || 'speedVal').innerText = settings.speed + 'x';
-        document.getElementById('maxBusesRange').value = settings.maxBuses;
-        document.getElementById('maxBusesVal').innerText = settings.maxBuses + ' 輛';
-        document.getElementById('sizeRange').value = settings.busSize;
-        document.getElementById('sizeVal').innerText = settings.busSize + 'x';
+    });
 
-        const savedBuses = localStorage.getItem('bus_parade_list');
-        if (savedBuses) {
-            try { buses = JSON.parse(savedBuses); } catch(e) { buses = []; }
-        }
+    // 監聽車隊
+    onSnapshot(collection(db, "buses"), (snapshot) => {
+        buses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderBusList();
-    }
+    });
 
-    function updateSettings() {
-        settings.speed = parseFloat(document.getElementById('speedRange').value);
-        settings.maxBuses = parseInt(document.getElementById('maxBusesRange').value);
-        settings.busSize = parseFloat(document.getElementById('sizeRange').value);
+    window.updateSettings = async function() {
+        currentSettings.speed = parseFloat(document.getElementById('speedRange').value);
+        currentSettings.maxBuses = parseInt(document.getElementById('maxBusesRange').value);
+        currentSettings.busSize = parseFloat(document.getElementById('sizeRange').value);
 
-        document.getElementById('speedVal').innerText = settings.speed + 'x';
-        document.getElementById('maxBusesVal').innerText = settings.maxBuses + ' 輛';
-        document.getElementById('sizeVal').innerText = settings.busSize + 'x';
+        document.getElementById('speedVal').innerText = currentSettings.speed + 'x';
+        document.getElementById('maxBusesVal').innerText = currentSettings.maxBuses + ' 輛';
+        document.getElementById('sizeVal').innerText = currentSettings.busSize + 'x';
 
-        localStorage.setItem('bus_parade_settings', JSON.stringify(settings));
-        bc.postMessage({ type: 'UPDATE_SETTINGS', ...settings });
-    }
+        await setDoc(doc(db, "settings", "global"), currentSettings, { merge: true });
+    };
 
-    function setSpeed(spd) {
+    window.setSpeed = function(spd) {
         document.getElementById('speedRange').value = spd;
         updateSettings();
-    }
+    };
 
     function renderBusList() {
         const container = document.getElementById('busListContainer');
         document.getElementById('totalBusesCount').innerText = buses.length;
         if (buses.length === 0) {
-            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #777;">目前沒有巴士在場上</div>';
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #777;">目前雲端沒有巴士在場上</div>';
             return;
         }
 
-        container.innerHTML = buses.map((bus, idx) => `
+        container.innerHTML = buses.map((bus) => `
             <div class="bus-item">
                 <div class="bus-info">
                     <img src="${bus.imgUrl || ''}" class="bus-thumb" onerror="this.style.display='none'">
@@ -171,59 +172,45 @@
                 </div>
                 <div style="display: flex; gap: 8px;">
                     <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="focusBus('${bus.id}')">✨ 特寫</button>
-                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="toggleHideBus('${bus.id}')">${bus.hidden ? '顯示' : '隱藏'}</button>
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="toggleHideBus('${bus.id}', ${bus.hidden})">${bus.hidden ? '顯示' : '隱藏'}</button>
                     <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteBus('${bus.id}')">刪除</button>
                 </div>
             </div>
         `).join('');
     }
 
-    function saveAndBroadcastBuses() {
-        localStorage.setItem('bus_parade_list', JSON.stringify(buses));
-        bc.postMessage({ type: 'UPDATE_BUSES', buses });
-        renderBusList();
-    }
+    window.focusBus = async function(id) {
+        await setDoc(doc(db, "settings", "global"), { ...currentSettings, focusedBusId: id, focusTimestamp: Date.now() }, { merge: true });
+    };
 
-    function focusBus(id) {
-        bc.postMessage({ type: 'FOCUS_BUS', busId: id });
-    }
+    window.toggleHideBus = async function(id, currentHidden) {
+        await updateDoc(doc(db, "buses", id), { hidden: !currentHidden });
+    };
 
-    function toggleHideBus(id) {
-        const bus = buses.find(b => b.id === id);
-        if (bus) {
-            bus.hidden = !bus.hidden;
-            saveAndBroadcastBuses();
+    window.deleteBus = async function(id) {
+        await deleteDoc(doc(db, "buses", id));
+    };
+
+    window.clearAllBuses = async function() {
+        if (confirm('確定要清空雲端上所有巴士嗎？')) {
+            const snapshot = await getDocs(collection(db, "buses"));
+            const batchDeletes = snapshot.docs.map(d => deleteDoc(doc(db, "buses", d.id)));
+            await Promise.all(batchDeletes);
         }
-    }
+    };
 
-    function deleteBus(id) {
-        buses = buses.filter(b => b.id !== id);
-        saveAndBroadcastBuses();
-    }
-
-    function clearAllBuses() {
-        if (confirm('確定要清空場上所有巴士嗎？')) {
-            buses = [];
-            saveAndBroadcastBuses();
-        }
-    }
-
-    function addDemoBus() {
+    window.addDemoBus = async function() {
         const names = ['快樂校車', '陽光號', '友愛快車', '微笑巴士', '閃電小黃', '社區同心號'];
-        const newBus = {
-            id: 'bus_' + Date.now(),
+        await addDoc(collection(db, "buses"), {
             name: names[Math.floor(Math.random() * names.length)] + ' (' + Math.floor(Math.random() * 90 + 10) + ')',
             dist: Math.random() * 0.8,
             speedMul: 0.9 + Math.random() * 0.3,
             color: '#fbc02d',
             imgUrl: null,
-            hidden: false
-        };
-        buses.push(newBus);
-        saveAndBroadcastBuses();
-    }
-
-    loadData();
+            hidden: false,
+            createdAt: Date.now()
+        });
+    };
 </script>
 </body>
 </html>
