@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>黃色小車大巡遊 — 現場互動大銀幕賽道</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', 'PingFang HK', 'Microsoft JhengHei', sans-serif;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Noto Sans TC', 'Fredoka', 'PingFang HK', sans-serif;
+            font-weight: 900;
+        }
+        /* 嚴格 16:9 寬螢幕舞台比例容器 */
+        .stage-16-9 {
+            aspect-ratio: 16 / 9;
+            width: min(100%, calc((100vh - 64px) * 16 / 9));
+            max-width: 100%;
+            max-height: calc(100vh - 64px);
+        }
+        .projector-active .stage-16-9 {
+            width: min(100vw, calc(100vh * 16 / 9));
+            max-height: 100vh;
+            border-radius: 0 !important;
+            border-width: 0 !important;
+        }
+        /* 透明去背預覽棋盤格 */
+        .checkerboard {
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(45deg, #e5e7eb 25%, transparent 25%), 
+                linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #e5e7eb 75%), 
+                linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.25);
+            border-radius: 9999px;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #printableSheet, #printableSheet * { visibility: visible; }
+            #printableSheet {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                z-index: 9999;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-900 min-h-screen flex flex-col">
+
+    <!-- 頂部導覽與模式切換列（投影機全螢幕模式下自動隱藏） -->
+    <header id="topHeader" class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 z-40 sticky top-0">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-300 via-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-display text-xl">
+                🚗
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-display text-lg sm:text-xl tracking-wide text-yellow-400 leading-none">黃色小車大巡遊</h1>
+                    <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> 即時同步 • 16:9
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 hidden sm:block mt-0.5">填上顏色 • 拍照上傳 • 登上大銀幕賽道</p>
+            </div>
+        </div>
+
+        <!-- 主要雙模式切換按鈕 -->
+        <div class="flex items-center bg-slate-800 p-1 rounded-2xl border border-slate-700 shadow-inner">
+            <button id="btnModeScreen" onclick="switchMode('screen')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-yellow-400 text-slate-950 shadow">
+                <span>🖥️</span> 大銀幕巡遊
+            </button>
+            <button id="btnModeStation" onclick="switchMode('station')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white">
+                <span>🎨</span> 拍照上傳 / 手繪
+            </button>
+        </div>
+
+        <!-- 右側主辦方快捷功能 -->
+        <div class="flex items-center gap-2">
+            <button onclick="openTemplateModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition" title="列印 A4 填色紙">
+                <span>🖨️</span> <span class="hidden md:inline">列印 A4 填色紙</span>
+            </button>
+            <button id="btnToggleControls" onclick="toggleOrganizerDrawer()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition" title="控制台設定">
+                <span>⚙️</span> <span class="hidden md:inline">控制台</span>
+            </button>
+            <button onclick="toggleProjectorMode()" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition" title="切換 16:9 投影機全螢幕模式（按鍵 F）">
+                <span>⛶</span> <span class="hidden sm:inline">投影機全螢幕模式</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 可收合主辦方控制台 -->
+    <div id="organizerDrawer" class="hidden bg-slate-800/95 backdrop-blur border-b border-slate-700 text-white px-4 py-3 z-30 shadow-xl">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                <!-- 巡遊車速控制 -->
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-slate-300">巡遊車速：</label>
+                    <input id="ctrlSpeed" type="range" min="0.2" max="2.5" step="0.1" value="1.0" class="w-24 accent-yellow-400 cursor-pointer">
+                    <span id="valSpeed" class="text-xs font-mono text-yellow-400 w-9">1.0x</span>
+                </div>
+                <!-- 小車尺寸控制 -->
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-slate-300">小車尺寸：</label>
+                    <input id="ctrlScale" type="range" min="0.6" max="1.6" step="0.1" value="1.0" class="w-24 accent-yellow-400 cursor-pointer">
+                    <span id="valScale" class="text-xs font-mono text-yellow-400 w-9">1.0x</span>
+                </div>
+                <!-- 顯示車主名牌 -->
+                <label class="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
+                    <input id="ctrlLabels" type="checkbox" checked class="rounded accent-yellow-400 w-4 h-4">
+                    顯示車主名牌
+                </label>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400 mr-1">賽道車輛：<strong id="carCountBadge" class="text-yellow-400">0</strong> 輛</span>
+                <button onclick="spawnDemoFleet(5)" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition">
+                    + 加入 5 輛示範小車
+                </button>
+                <button onclick="clearAllCars()" class="px-3 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold transition">
+                    清空賽道
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 畫面一：嚴格 16:9 寬螢幕風景彎曲賽道大銀幕                              -->
+    <!-- ===================================================================== -->
+    <main id="viewScreen" class="relative flex-1 w-full bg-slate-950 flex items-center justify-center p-0 sm:p-2 overflow-hidden">
+        <!-- 嚴格 16:9 寬螢幕舞台框 -->
+        <div id="stageContainer" class="stage-16-9 relative rounded-none sm:rounded-2xl overflow-hidden shadow-2xl border-0 sm:border-2 border-slate-800 bg-emerald-600 flex items-center justify-center">
+            <!-- 1920x1080 虛擬座標高解析度 60fps 賽道畫布 -->
+            <canvas id="roadCanvas" class="block w-full h-full"></canvas>
+
+            <!-- 16:9 比例標示浮水印（非投影模式右上角） -->
+            <div id="aspectBadge" class="pointer-events-none absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-slate-900/60 backdrop-blur text-white/80 text-[11px] font-bold border border-white/15">
+                16:9 寬螢幕舞台
+            </div>
+
+            <!-- 退出投影機全螢幕按鈕（僅在投影模式顯示） -->
+            <button id="btnExitProjector" onclick="toggleProjectorMode()" class="hidden absolute top-4 right-4 z-50 px-4 py-2 rounded-full bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-bold backdrop-blur border border-white/25 shadow-lg transition">
+                ✕ 退出投影機全螢幕
+            </button>
+
+            <!-- 左下角觀眾參與提示卡 -->
+            <div id="joinBanner" class="absolute bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3.5 shadow-2xl border-2 border-yellow-400 flex items-center gap-3 max-w-[270px] sm:max-w-sm transition-transform hover:scale-[1.02]">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-slate-900 p-1.5 flex-shrink-0 flex items-center justify-center">
+                    <svg viewBox="0 0 36 36" class="w-full h-full fill-yellow-400">
+                        <path d="M2 2h10v10H2V2zm2 2v6h6V4H4zm2 2h2v2H6V6zm18-4h10v10H24V2zm2 2v6h6V4h-6zm2 2h2v2h-2V6zM2 24h10v10H2V24zm2 2v6h6v-6H4zm2 2h2v2H6v-2zm10-24h4v4h-4V4zm0 8h4v6h-4v-6zm6 2h4v4h-4v-4zm6 4h6v4h-6v-4zM14 20h6v4h-6v-4zm8 4h4v10h-4V24zm6 4h6v6h-6v-6zm-14 2h6v4h-6v-4z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="inline-block px-2 py-0.5 rounded-md bg-yellow-400 text-slate-950 font-display text-[10px] tracking-wider mb-0.5">
+                        歡迎加入大巡遊！
+                    </div>
+                    <p class="font-display text-slate-900 text-sm sm:text-base leading-tight">為你的黃色小車上色</p>
+                    <p class="text-[11px] text-slate-600 leading-snug mt-0.5">填色紙拍照上傳，或直接用手機即時手繪！</p>
+                    <button onclick="switchMode('station')" class="mt-1 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800">
+                        前往拍照上傳 / 手繪站 →
+                    </button>
+                </div>
+            </div>
+
+            <!-- 新車登場慶祝橫幅通知 -->
+            <div id="arrivalToast" class="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 z-30 transition-all duration-500 opacity-0 -translate-y-4">
+                <div class="bg-slate-900/90 backdrop-blur-md text-white px-5 py-2.5 rounded-full border-2 border-yellow-400 shadow-2xl flex items-center gap-3">
+                    <span class="text-2xl animate-bounce">🎉</span>
+                    <div>
+                        <p class="text-[11px] text-yellow-300 font-bold tracking-wider">新車閃亮登場！</p>
+                        <p id="arrivalToastText" class="font-display text-sm sm:text-base text-white">陳小明的黃色跑車</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右下角快捷按鈕 -->
+            <div class="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 flex flex-col sm:flex-row gap-2">
+                <button onclick="spawnDemoFleet(3)" class="px-3.5 py-2 rounded-2xl bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur border border-white/15 text-xs sm:text-sm font-bold shadow-xl transition flex items-center gap-1.5">
+                    <span>✨</span> + 示範小車
+                </button>
+                <button onclick="switchMode('station')" class="px-4 py-2 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-display text-xs sm:text-sm shadow-xl shadow-yellow-500/20 transition flex items-center gap-1.5">
+                    <span>📸</span> 上傳我的小車
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- 畫面二：觀眾拍照上傳（智能去背）與即時手繪工作站                        -->
+    <!-- ===================================================================== -->
+    <section id="viewStation" class="hidden flex-1 bg-gradient-to-b from-amber-50 via-yellow-50/80 to-slate-100 py-6 px-4 overflow-y-auto">
+        <div class="max-w-3xl mx-auto">
+            <!-- 標題區 -->
+            <div class="text-center mb-6">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-400/30 border border-yellow-500/40 text-amber-900 text-xs font-bold mb-2">
+                    🎨 觀眾創作工作站
+                </span>
+                <h2 class="font-display text-2xl sm:text-3xl text-slate-900">讓你的黃色小車駛上大銀幕！</h2>
+                <p class="text-sm text-slate-600 mt-1">拍攝你填好顏色的紙本小車，或直接在螢幕上即時手繪創作。</p>
+            </div>
+
+            <!-- 工作站分頁切換：拍照上傳 vs 即時手繪 -->
+            <div class="grid grid-cols-2 gap-2 p-1.5 bg-white rounded-2xl shadow-sm border border-slate-200 mb-6">
+                <button id="tabPhotoCutout" onclick="switchStationTab('photo')" class="py-3 px-4 rounded-xl font-display text-sm sm:text-base flex items-center justify-center gap-2 transition bg-yellow-400 text-slate-950 shadow">
+                    <span>📸</span> 拍照上傳（智能去背）
+                </button>
+                <button id="tabDigitalPaint" onclick="switchStationTab('paint')" class="py-3 px-4 rounded-xl font-display text-sm sm:text-base flex items-center justify-center gap-2 transition text-slate-600 hover:bg-slate-50">
+                    <span>🖌️</span> 即時手繪小車
+                </button>
+            </div>
+
+            <!-- =============================================================== -->
+            <!-- 分頁 A：拍照上傳與白紙自動去背剪裁工具                          -->
+            <!-- =============================================================== -->
+            <div id="panelPhotoCutout" class="bg-white rounded-3xl shadow-xl border border-slate-200/80 p-5 sm:p-6">
+                <!-- 步驟一：開啟相機或選擇相片 -->
+                <div id="uploadDropzone" class="border-2 border-dashed border-amber-400 bg-amber-50/50 hover:bg-amber-50 rounded-2xl p-6 sm:p-8 text-center transition cursor-pointer relative">
+                    <input id="carFileInput" type="file" accept="image/*" capture="environment" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <div class="w-16 h-16 rounded-2xl bg-yellow-400 text-slate-950 flex items-center justify-center text-3xl mx-auto mb-3 shadow-md">
+                        📷
+                    </div>
+                    <h3 class="font-display text-lg text-slate-900">點擊開啟相機拍照或選擇相片</h3>
+                    <p class="text-xs sm:text-sm text-slate-600 max-w-md mx-auto mt-1">
+                        請拍下你在白紙上畫好的黃色小車，系統會自動去除白色紙張背景，只保留你的小車！
+                    </p>
+                    <div class="mt-4 inline-flex flex-wrap items-center justify-center gap-2">
+                        <span class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow">開啟相機 / 相簿</span>
+                        <button type="button" onclick="event.stopPropagation(); loadSamplePaperPhoto();" class="relative z-20 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold transition">
+                            試用範例相片
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步驟二：互動式去背強度與方向調整 -->
+                <div id="cutoutEditorArea" class="hidden mt-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <h4 class="font-display text-base text-slate-800 flex items-center gap-2">
+                            <span>✂️</span> 智能去背效果預覽
+                        </h4>
+                        <label class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition">
+                            🔄 重新選擇相片
+                            <input type="file" accept="image/*" capture="environment" onchange="handlePhotoFile(this.files[0])" class="hidden">
+                        </label>
+                    </div>
+
+                    <!-- 棋盤格去背預覽區 -->
+                    <div class="checkerboard rounded-2xl border-2 border-slate-200 overflow-hidden relative flex items-center justify-center h-64 sm:h-72 shadow-inner">
+                        <canvas id="cutoutCanvas" class="max-w-full max-h-full object-contain"></canvas>
+                        <div class="absolute bottom-2 right-2 bg-slate-900/75 text-white text-[11px] px-2.5 py-1 rounded-full backdrop-blur">
+                            車頭方向：向右行駛 →
+                        </div>
+                    </div>
+
+                    <!-- 去背與旋轉微調控制項 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                <span>🪄 自動去除白紙背景強度</span>
+                                <span id="lblThreshold" class="font-mono text-amber-600">42%</span>
+                            </div>
+                            <input id="cutoutThreshold" type="range" min="0" max="100" value="42" oninput="processPhotoCutout()" class="w-full accent-yellow-500 cursor-pointer">
+                            <p class="text-[11px] text-slate-500 mt-1">向右滑動可消除更多小車周圍的白色或淺灰色紙張陰影。</p>
+                        </div>
+
+                        <div class="flex flex-col justify-between gap-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-bold text-slate-700">方向與翻轉：</span>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" onclick="rotateCutout(-90)" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold" title="向左旋轉 90 度">↺ 90°</button>
+                                    <button type="button" onclick="rotateCutout(90)" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold" title="向右旋轉 90 度">↻ 90°</button>
+                                    <button type="button" onclick="flipCutout()" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold" title="水平翻轉車頭方向">⇄ 左右翻轉</button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-700">畫面縮放：</span>
+                                <input id="cutoutZoom" type="range" min="0.8" max="2.2" step="0.05" value="1.15" oninput="processPhotoCutout()" class="flex-1 accent-yellow-500 cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =============================================================== -->
+            <!-- 分頁 B：即時手繪黃色小車工作室                                  -->
+            <!-- =============================================================== -->
+            <div id="panelDigitalPaint" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200/80 p-5 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div>
+                        <h3 class="font-display text-lg text-slate-900">設計你的專屬黃色小車</h3>
+                        <p class="text-xs text-slate-500">用手指或滑鼠在車身上畫出賽車條紋、星星、愛心或可愛圖案！</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="undoPaint()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">↩ 復原一步</button>
+                        <button type="button" onclick="resetPaintCanvas()" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition">🗑️ 重畫</button>
+                    </div>
+                </div>
+
+                <!-- 手繪畫布容器 -->
+                <div class="relative rounded-2xl border-2 border-slate-300 bg-sky-50/40 overflow-hidden touch-none flex items-center justify-center">
+                    <canvas id="paintCanvas" width="640" height="360" class="w-full h-auto max-h-[320px] block cursor-crosshair"></canvas>
+                </div>
+
+                <!-- 調色盤與筆刷粗細 -->
+                <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                    <div id="colorSwatches" class="flex flex-wrap items-center justify-center gap-2">
+                        <!-- 由 JS 動態產生色票 -->
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200">
+                            <button type="button" onclick="setBrushSize(6)" class="brush-size-btn w-6 h-6 rounded-lg flex items-center justify-center hover:bg-slate-100" data-size="6" title="幼筆刷"><span class="w-1.5 h-1.5 rounded-full bg-slate-800"></span></button>
+                            <button type="button" onclick="setBrushSize(14)" class="brush-size-btn w-6 h-6 rounded-lg flex items-center justify-center bg-yellow-200" data-size="14" title="中筆刷"><span class="w-3 h-3 rounded-full bg-slate-800"></span></button>
+                            <button type="button" onclick="setBrushSize(26)" class="brush-size-btn w-6 h-6 rounded-lg flex items-center justify-center hover:bg-slate-100" data-size="26" title="粗筆刷"><span class="w-5 h-5 rounded-full bg-slate-800"></span></button>
+                        </div>
+                        <button type="button" onclick="setEraserMode()" id="btnEraser" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100 transition">
+                            🧼 橡皮擦
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =============================================================== -->
+            <!-- 底部發射列：輸入車主姓名並傳送至 16:9 大銀幕                    -->
+            <!-- =============================================================== -->
+            <div class="mt-6 bg-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-800">
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
+                    <div class="sm:col-span-7">
+                        <label for="driverNameInput" class="block text-xs font-bold tracking-wider text-yellow-400 mb-1.5">
+                            車主姓名或祝福語（將顯示於大銀幕小車上方）
+                        </label>
+                        <input id="driverNameInput" type="text" maxlength="20" placeholder="例如：陳小明 • 黃色小車加油！" class="w-full px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700 text-white placeholder-slate-400 font-bold text-sm focus:outline-none focus:border-yellow-400 transition">
+                    </div>
+                    <div class="sm:col-span-5">
+                        <button id="btnLaunchCar" onclick="launchCarToTrack()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-slate-950 font-display text-base sm:text-lg shadow-lg shadow-amber-500/25 transform active:scale-95 transition flex items-center justify-center gap-2">
+                            <span>🚀</span> 傳送到大銀幕賽道！
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 可列印 A4 填色紙彈出視窗                                              -->
+    <!-- ===================================================================== -->
+    <div id="templateModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-display text-xl text-slate-900">現場活動專用 A4 填色紙</h3>
+                    <p class="text-xs text-slate-500">建議使用 A4 白色影印紙列印，讓現場觀眾用黃色及各色水彩筆填色。</p>
+                </div>
+                <button onclick="closeTemplateModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-600">✕</button>
+            </div>
+
+            <!-- 可列印紙張預覽區 -->
+            <div id="printableSheet" class="border-2 border-slate-300 rounded-2xl p-6 bg-white text-center">
+                <div class="border-4 border-dashed border-slate-400 rounded-2xl p-6">
+                    <h2 class="font-display text-2xl text-slate-900 tracking-wide">黃色小車填色紙 — 塗上顏色後拍照上傳到大銀幕！</h2>
+                    <p class="text-xs text-slate-600 mt-1.5">步驟 1：為小車塗上亮麗的黃色與創意花紋 • 步驟 2：用手機拍下整張小車並上傳到大銀幕一起巡遊！</p>
+                    
+                    <!-- 高對比粗黑線條 SVG 汽車輪廓（專為手機拍照智能去背優化） -->
+                    <div class="my-6 flex justify-center">
+                        <svg viewBox="0 0 500 260" class="w-full max-w-md h-auto">
+                            <path d="M 65 175 L 55 175 C 42 175 35 165 38 150 L 48 122 C 53 108 66 102 85 100 L 145 94 L 190 48 C 204 35 222 30 245 30 L 325 30 C 350 30 370 40 385 60 L 415 98 L 448 106 C 464 110 472 122 472 138 L 472 162 C 472 172 465 175 452 175 L 425 175" fill="#ffffff" stroke="#0f172a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="175" y1="175" x2="325" y2="175" stroke="#0f172a" stroke-width="8" stroke-linecap="round"/>
+                            <path d="M 168 95 L 202 55 C 210 47 220 45 235 45 L 268 45 L 268 95 Z" fill="#ffffff" stroke="#0f172a" stroke-width="6" stroke-linejoin="round"/>
+                            <path d="M 284 45 L 324 45 C 340 45 352 52 362 65 L 386 95 L 284 95 Z" fill="#ffffff" stroke="#0f172a" stroke-width="6" stroke-linejoin="round"/>
+                            <line x1="276" y1="102" x2="276" y2="168" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>
+                            <rect x="236" y="114" width="22" height="8" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
+                            <path d="M 452 116 C 464 118 468 126 468 136 L 448 136 Z" fill="#ffffff" stroke="#0f172a" stroke-width="5"/>
+                            <rect x="42" y="122" width="14" height="22" rx="4" fill="#ffffff" stroke="#0f172a" stroke-width="5"/>
+                            <circle cx="122" cy="178" r="44" fill="#ffffff" stroke="#0f172a" stroke-width="8"/>
+                            <circle cx="122" cy="178" r="22" fill="#ffffff" stroke="#0f172a" stroke-width="5"/>
+                            <circle cx="122" cy="178" r="7" fill="#0f172a"/>
+                            <circle cx="378" cy="178" r="44" fill="#ffffff" stroke="#0f172a" stroke-width="8"/>
+                            <circle cx="378" cy="178" r="22" fill="#ffffff" stroke="#0f172a" stroke-width="5"/>
+                            <circle cx="378" cy="178" r="7" fill="#0f172a"/>
+                        </svg>
+                    </div>
+
+                    <div class="flex items-center justify-between text-left border-t border-slate-300 pt-3 text-xs text-slate-700 font-bold">
+                        <span>創作者姓名：___________________________</span>
+                        <span>小車名稱：___________________________</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5 flex justify-end gap-3">
+                <button onclick="closeTemplateModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold">關閉</button>
+                <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-display text-sm shadow flex items-center gap-2">
+                    <span>🖨️</span> 立即列印 A4 填色紙
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部非阻斷式系統提示橫幅 -->
+    <div id="feedbackBanner" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-yellow-400/60 text-sm font-bold flex items-center gap-2.5">
+        <span id="feedbackIcon">✅</span>
+        <span id="feedbackText">已成功將小車加入大銀幕賽道！</span>
+    </div>
+
+    <script>
+        /**
+         * =========================================================================
+         * 黃色小車大巡遊 — 核心系統架構（嚴格 16:9 寬螢幕舞台 + 繁體中文版）
+         * 1. 1920x1080 虛擬座標空間 + 高 DPI 清晰渲染 + CSS 16:9 比例舞台框
+         * 2. 跨分頁即時同步（BroadcastChannel + LocalStorage）
+         * 3. 弧長參數化封閉 Catmull-Rom 彎曲賽道引擎（確保過彎等速流暢）
+         * 4. 紙本相片智能去背裁切引擎 + 觸控/滑鼠即時手繪工作室
+         * =========================================================================
+         */
+
+        const STAGE_W = 1920;
+        const STAGE_H = 1080;
+        const STORAGE_KEY = 'yellow_car_parade_fleet_zh_hk_v1';
+        const CHANNEL_NAME = 'yellow_car_parade_sync_zh_hk';
+        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel(CHANNEL_NAME) : null;
+
+        // 全域應用程式狀態
+        const state = {
+            mode: 'screen',          // 'screen' | 'station'
+            stationTab: 'photo',     // 'photo' | 'paint'
+            projectorMode: false,
+            speedMultiplier: 1.0,
+            carScale: 1.0,
+            showLabels: true,
+            cars: [],                // 賽道上行駛中的車輛陣列
+            sparkles: [],            // 新車登場慶祝粒子
+            exhaustPuffs: [],        // 小車排氣管可愛白煙粒子
+            clouds: [],              // 天空飄浮雲朵
+            roadLut: [],             // 均勻弧長採樣查找表
+            totalRoadLength: 0,
+            lastFrameTime: 0
+        };
+
+        // 相片去背編輯器狀態
+        const cutoutState = {
+            sourceImage: null,
+            rotation: 0,
+            flipped: false,
+            processedDataUrl: null
+        };
+
+        // 即時手繪工作室狀態
+        const paintState = {
+            isDrawing: false,
+            color: '#ef4444',
+            brushSize: 14,
+            isEraser: false,
+            history: []
+        };
+
+        // =========================================================================
+        // 1. 初始化與事件綁定
+        // =========================================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initPaintStudio();
+            initCutoutListeners();
+            initControlListeners();
+            initAmbientClouds();
+
+            // 載入已儲存車輛，若無則自動生成預設示範車隊
+            loadCarsFromStorage();
+            if (state.cars.length === 0) {
+                spawnDemoFleet(4, true);
+            }
+
+            // 建立 1920x1080 賽道曲線查找表並調整畫布解析度
+            buildUniformRoadSpline(STAGE_W, STAGE_H);
+            resizeRoadCanvas();
+            window.addEventListener('resize', resizeRoadCanvas);
+
+            // 快捷鍵支援（F 鍵切換投影機全螢幕、M 鍵切換工作站）
+            window.addEventListener('keydown', (e) => {
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                if (e.key.toLowerCase() === 'f') toggleProjectorMode();
+                if (e.key.toLowerCase() === 'm') switchMode(state.mode === 'screen' ? 'station' : 'screen');
+            });
+
+            // 跨分頁即時同步監聽
+            if (syncChannel) {
+                syncChannel.onmessage = (event) => {
+                    if (event.data && event.data.type === 'NEW_CAR') {
+                        ingestExternalCar(event.data.car);
+                    } else if (event.data && event.data.type === 'CLEAR_CARS') {
+                        state.cars = [];
+                        updateCarCounter();
+                    }
+                };
+            }
+            window.addEventListener('storage', (e) => {
+                if (e.key === STORAGE_KEY) {
+                    loadCarsFromStorage();
+                }
+            });
+
+            // 啟動 60fps 動畫主迴圈
+            requestAnimationFrame(animationLoop);
+        });
+
+        // =========================================================================
+        // 2. 畫面與模式切換控制
+        // =========================================================================
+        function switchMode(newMode) {
+            state.mode = newMode;
+            const viewScreen = document.getElementById('viewScreen');
+            const viewStation = document.getElementById('viewStation');
+            const btnScreen = document.getElementById('btnModeScreen');
+            const btnStation = document.getElementById('btnModeStation');
+
+            if (newMode === 'screen') {
+                viewScreen.classList.remove('hidden');
+                viewStation.classList.add('hidden');
+                btnScreen.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-yellow-400 text-slate-950 shadow';
+                btnStation.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
+                resizeRoadCanvas();
+            } else {
+                viewScreen.classList.add('hidden');
+                viewStation.classList.remove('hidden');
+                btnStation.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-yellow-400 text-slate-950 shadow';
+                btnScreen.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
+            }
+        }
+
+        function switchStationTab(tab) {
+            state.stationTab = tab;
+            const panelPhoto = document.getElementById('panelPhotoCutout');
+            const panelPaint = document.getElementById('panelDigitalPaint');
+            const tabPhoto = document.getElementById('tabPhotoCutout');
+            const tabPaint = document.getElementById('tabDigitalPaint');
+
+            if (tab === 'photo') {
+                panelPhoto.classList.remove('hidden');
+                panelPaint.classList.add('hidden');
+                tabPhoto.className = 'py-3 px-4 rounded-xl font-display text-sm sm:text-base flex items-center justify-center gap-2 transition bg-yellow-400 text-slate-950 shadow';
+                tabPaint.className = 'py-3 px-4 rounded-xl font-display text-sm sm:text-base flex items-center justify-center gap-2 transition text-slate-600 hover:bg-slate-50';
+            } else {
+                panelPhoto.classList.add('hidden');
+                panelPaint.classList.remove('hidden');
+                tabPaint.className = 'py-3 px-4 rounded-xl font-display text-sm sm:text-base flex items-center justify-center gap-2 transition bg-yellow-400 text-slate-950 shadow';
+                tabPhoto.className = 'py-3 px-4 rounded-xl font-display text-sm sm:text-base flex items-center justify-center gap-2 transition text-slate-600 hover:bg-slate-50';
+            }
+        }
+
+        function toggleOrganizerDrawer() {
+            document.getElementById('organizerDrawer').classList.toggle('hidden');
+        }
+
+        function toggleProjectorMode() {
+            state.projectorMode = !state.projectorMode;
+            if (state.mode !== 'screen') switchMode('screen');
+
+            const header = document.getElementById('topHeader');
+            const drawer = document.getElementById('organizerDrawer');
+            const exitBtn = document.getElementById('btnExitProjector');
+            const aspectBadge = document.getElementById('aspectBadge');
+
+            if (state.projectorMode) {
+                document.body.classList.add('projector-active');
+                header.classList.add('hidden');
+                drawer.classList.add('hidden');
+                aspectBadge.classList.add('hidden');
+                exitBtn.classList.remove('hidden');
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                }
+            } else {
+                document.body.classList.remove('projector-active');
+                header.classList.remove('hidden');
+                aspectBadge.classList.remove('hidden');
+                exitBtn.classList.add('hidden');
+                if (document.fullscreenElement && document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                }
+            }
+            setTimeout(resizeRoadCanvas, 60);
+        }
+
+        function openTemplateModal() {
+            document.getElementById('templateModal').classList.remove('hidden');
+        }
+        function closeTemplateModal() {
+            document.getElementById('templateModal').classList.add('hidden');
+        }
+
+        function showFeedback(text, icon = '✅') {
+            const box = document.getElementById('feedbackBanner');
+            document.getElementById('feedbackText').textContent = text;
+            document.getElementById('feedbackIcon').textContent = icon;
+            box.classList.remove('hidden');
+            clearTimeout(box._timer);
+            box._timer = setTimeout(() => box.classList.add('hidden'), 3200);
+        }
+
+        function initControlListeners() {
+            document.getElementById('ctrlSpeed').addEventListener('input', (e) => {
+                state.speedMultiplier = parseFloat(e.target.value);
+                document.getElementById('valSpeed').textContent = state.speedMultiplier.toFixed(1) + 'x';
+            });
+            document.getElementById('ctrlScale').addEventListener('input', (e) => {
+                state.carScale = parseFloat(e.target.value);
+                document.getElementById('valScale').textContent = state.carScale.toFixed(1) + 'x';
+            });
+            document.getElementById('ctrlLabels').addEventListener('change', (e) => {
+                state.showLabels = e.target.checked;
+            });
+        }
+
+        // =========================================================================
+        // 3. 16:9 寬螢幕彎曲賽道樣條曲線與風景地圖繪製引擎（1920x1080 虛擬座標）
+        // =========================================================================
+        const roadCanvas = document.getElementById('roadCanvas');
+        const rCtx = roadCanvas.getContext('2d');
+
+        // 專為 16:9 寬螢幕構圖設計的優雅 S 型環狀彎曲賽道控制點（歸一化 0..1）
+        const TRACK_WAYPOINTS_16_9 = [
+            { x: 0.12, y: 0.23 },
+            { x: 0.31, y: 0.14 },
+            { x: 0.51, y: 0.25 },
+            { x: 0.72, y: 0.15 },
+            { x: 0.89, y: 0.28 },
+            { x: 0.85, y: 0.52 },
+            { x: 0.65, y: 0.45 },
+            { x: 0.47, y: 0.56 },
+            { x: 0.66, y: 0.75 },
+            { x: 0.87, y: 0.81 },
+            { x: 0.67, y: 0.90 },
+            { x: 0.33, y: 0.86 },
+            { x: 0.12, y: 0.76 },
+            { x: 0.19, y: 0.50 }
+        ];
+
+        function resizeRoadCanvas() {
+            const container = document.getElementById('stageContainer');
+            if (!container || document.getElementById('viewScreen').classList.contains('hidden')) return;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const rect = container.getBoundingClientRect();
+            // 維持嚴格 16:9 實體畫布像素，並映射到 1920x1080 虛擬邏輯座標
+            const targetW = Math.max(640, Math.round(rect.width * dpr));
+            const targetH = Math.round(targetW * 9 / 16);
+            roadCanvas.width = targetW;
+            roadCanvas.height = targetH;
+        }
+
+        // Catmull-Rom 封閉平滑曲線插值
+        function getCatmullRomPoint(pts, t) {
+            const n = pts.length;
+            const scaledT = ((t % 1) + 1) % 1 * n;
+            const i1 = Math.floor(scaledT) % n;
+            const f = scaledT - Math.floor(scaledT);
+
+            const p0 = pts[(i1 - 1 + n) % n];
+            const p1 = pts[i1];
+            const p2 = pts[(i1 + 1) % n];
+            const p3 = pts[(i1 + 2) % n];
+
+            const f2 = f * f;
+            const f3 = f2 * f;
+
+            const x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * f + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * f2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * f3);
+            const y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * f + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * f2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * f3);
+            return { x, y };
+        }
+
+        // 建立 1920x1080 空間內的均勻弧長查找表，確保車輛過彎速度恆定滑順
+        function buildUniformRoadSpline(w, h) {
+            const scaledPts = TRACK_WAYPOINTS_16_9.map(p => ({
+                x: p.x * w,
+                y: p.y * h
+            }));
+
+            const SAMPLES = 1000;
+            const raw = [];
+            let cumLen = 0;
+            let prev = getCatmullRomPoint(scaledPts, 0);
+            raw.push({ x: prev.x, y: prev.y, dist: 0 });
+
+            for (let i = 1; i <= SAMPLES; i++) {
+                const pt = getCatmullRomPoint(scaledPts, i / SAMPLES);
+                const d = Math.hypot(pt.x - prev.x, pt.y - prev.y);
+                cumLen += d;
+                raw.push({ x: pt.x, y: pt.y, dist: cumLen });
+                prev = pt;
+            }
+
+            const UNIFORM_COUNT = 800;
+            const lut = [];
+            let rawIdx = 0;
+            for (let i = 0; i < UNIFORM_COUNT; i++) {
+                const targetDist = (i / UNIFORM_COUNT) * cumLen;
+                while (rawIdx < raw.length - 2 && raw[rawIdx + 1].dist < targetDist) {
+                    rawIdx++;
+                }
+                const a = raw[rawIdx];
+                const b = raw[rawIdx + 1];
+                const segSpan = Math.max(0.0001, b.dist - a.dist);
+                const alpha = (targetDist - a.dist) / segSpan;
+                lut.push({
+                    x: a.x + (b.x - a.x) * alpha,
+                    y: a.y + (b.y - a.y) * alpha
+                });
+            }
+
+            for (let i = 0; i < UNIFORM_COUNT; i++) {
+                const prevPt = lut[(i - 2 + UNIFORM_COUNT) % UNIFORM_COUNT];
+                const nextPt = lut[(i + 2) % UNIFORM_COUNT];
+                lut[i].angle = Math.atan2(nextPt.y - prevPt.y, nextPt.x - prevPt.x);
+            }
+
+            state.roadLut = lut;
+            state.totalRoadLength = cumLen;
+        }
+
+        function sampleRoadAtProgress(progress01) {
+            const lut = state.roadLut;
+            if (!lut || lut.length === 0) return { x: 0, y: 0, angle: 0 };
+            const n = lut.length;
+            const wrapped = ((progress01 % 1) + 1) % 1;
+            const exact = wrapped * n;
+            const i0 = Math.floor(exact) % n;
+            const i1 = (i0 + 1) % n;
+            const f = exact - Math.floor(exact);
+
+            let diff = lut[i1].angle - lut[i0].angle;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+
+            return {
+                x: lut[i0].x + (lut[i1].x - lut[i0].x) * f,
+                y: lut[i0].y + (lut[i1].y - lut[i0].y) * f,
+                angle: lut[i0].angle + diff * f
+            };
+        }
+
+        function initAmbientClouds() {
+            state.clouds = Array.from({ length: 7 }, (_, i) => ({
+                x: Math.random(),
+                y: 0.07 + (i * 0.13) % 0.82,
+                speed: 0.0035 + Math.random() * 0.004,
+                scale: 0.8 + Math.random() * 0.7
+            }));
+        }
+
+        // 在 1920x1080 虛擬座標系中繪製完整 16:9 寬螢幕風景世界與賽道
+        function drawScenicWorld(ctx, w, h, timeSec) {
+            // 1. 翠綠陽光草地漸層背景
+            const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+            bgGrad.addColorStop(0, '#4ade80');
+            bgGrad.addColorStop(0.5, '#22c55e');
+            bgGrad.addColorStop(1, '#16a34a');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // 2. 柔和起伏丘陵草坡（專為 16:9 寬幅配置）
+            ctx.fillStyle = 'rgba(134, 239, 172, 0.36)';
+            drawHillBlob(ctx, w * 0.22, h * 0.22, w * 0.22, h * 0.17);
+            drawHillBlob(ctx, w * 0.78, h * 0.28, w * 0.25, h * 0.20);
+            drawHillBlob(ctx, w * 0.42, h * 0.76, w * 0.28, h * 0.18);
+
+            // 3. 波光粼粼的雙湖泊景觀
+            drawScenicLake(ctx, w * 0.28, h * 0.64, 155, timeSec);
+            drawScenicLake(ctx, w * 0.72, h * 0.31, 110, timeSec + 1.5);
+
+            // 4. 綠樹、花叢、童話小屋與旋轉風車
+            drawTreesAndFlowers(ctx, w, h);
+            drawCountrysideTown(ctx, w * 0.48, h * 0.34);
+            drawWindmill(ctx, w * 0.91, h * 0.63, timeSec);
+
+            // 5. 多層次立體彎曲賽道
+            drawCurvedRoad(ctx);
+
+            // 6. 起點／終點黑白方格拱門橫幅
+            drawStartFinishArch(ctx);
+
+            // 7. 高空悠閒飄過的白雲
+            drawClouds(ctx, w, h);
+        }
+
+        function drawHillBlob(ctx, cx, cy, rx, ry) {
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawScenicLake(ctx, cx, cy, radius, t) {
+            ctx.save();
+            ctx.fillStyle = '#fde68a';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, radius * 1.18, radius * 0.80, -0.12, 0, Math.PI * 2);
+            ctx.fill();
+
+            const waterGrad = ctx.createRadialGradient(cx - radius * 0.2, cy - radius * 0.2, radius * 0.1, cx, cy, radius * 1.1);
+            waterGrad.addColorStop(0, '#38bdf8');
+            waterGrad.addColorStop(1, '#0284c7');
+            ctx.fillStyle = waterGrad;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, radius * 1.05, radius * 0.68, -0.12, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 3;
+            const rippleOffset = Math.sin(t * 2) * 6;
+            ctx.beginPath();
+            ctx.arc(cx - radius * 0.2 + rippleOffset, cy - radius * 0.1, radius * 0.26, 0.2, 2.2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawTreesAndFlowers(ctx, w, h) {
+            const treeCoords = [
+                [0.05, 0.14], [0.07, 0.38], [0.05, 0.58], [0.06, 0.86],
+                [0.42, 0.08], [0.62, 0.09], [0.95, 0.13], [0.96, 0.46],
+                [0.95, 0.86], [0.49, 0.93], [0.37, 0.35], [0.60, 0.62],
+                [0.21, 0.89], [0.79, 0.45]
+            ];
+            const s = 34;
+            treeCoords.forEach(([nx, ny], idx) => {
+                const x = nx * w;
+                const y = ny * h;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.16)';
+                ctx.beginPath();
+                ctx.ellipse(x + 6, y + s * 0.65, s * 0.78, s * 0.36, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#78350f';
+                ctx.fillRect(x - s * 0.15, y, s * 0.30, s * 0.65);
+
+                ctx.fillStyle = idx % 2 === 0 ? '#15803d' : '#166534';
+                ctx.beginPath();
+                ctx.arc(x, y - s * 0.1, s * 0.70, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#4ade80';
+                ctx.beginPath();
+                ctx.arc(x - s * 0.18, y - s * 0.28, s * 0.38, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function drawCountrysideTown(ctx, cx, cy) {
+            const s = 44;
+            const houses = [
+                { dx: -s * 1.25, dy: 8, roof: '#ef4444', wall: '#fef3c7' },
+                { dx: s * 0.25, dy: -s * 0.45, roof: '#f97316', wall: '#ffffff' },
+                { dx: s * 1.35, dy: s * 0.35, roof: '#3b82f6', wall: '#fef9c3' }
+            ];
+            houses.forEach(hs => {
+                const x = cx + hs.dx;
+                const y = cy + hs.dy;
+                ctx.fillStyle = 'rgba(0,0,0,0.16)';
+                ctx.fillRect(x - s * 0.55 + 5, y - s * 0.3 + 6, s * 1.1, s * 0.8);
+                ctx.fillStyle = hs.wall;
+                ctx.fillRect(x - s * 0.55, y - s * 0.3, s * 1.1, s * 0.8);
+                ctx.fillStyle = hs.roof;
+                ctx.beginPath();
+                ctx.moveTo(x - s * 0.72, y - s * 0.3);
+                ctx.lineTo(x, y - s * 0.88);
+                ctx.lineTo(x + s * 0.72, y - s * 0.3);
+                ctx.closePath();
+                ctx.fill();
+            });
+        }
+
+        function drawWindmill(ctx, cx, cy, t) {
+            const s = 56;
+            ctx.fillStyle = '#f8fafc';
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx - s * 0.35, cy + s * 0.7);
+            ctx.lineTo(cx - s * 0.2, cy - s * 0.5);
+            ctx.lineTo(cx + s * 0.2, cy - s * 0.5);
+            ctx.lineTo(cx + s * 0.35, cy + s * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#dc2626';
+            ctx.beginPath();
+            ctx.arc(cx, cy - s * 0.5, s * 0.23, Math.PI, 0);
+            ctx.fill();
+
+            ctx.save();
+            ctx.translate(cx, cy - s * 0.45);
+            ctx.rotate(t * 0.9);
+            ctx.strokeStyle = '#78350f';
+            ctx.fillStyle = '#fde047';
+            ctx.lineWidth = 3.5;
+            for (let i = 0; i < 4; i++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, -s * 0.88);
+                ctx.stroke();
+                ctx.fillRect(3, -s * 0.82, s * 0.17, s * 0.52);
+            }
+            ctx.restore();
+        }
+
+        function drawCurvedRoad(ctx) {
+            const lut = state.roadLut;
+            if (!lut || lut.length === 0) return;
+
+            const roadWidth = 104;
+
+            const traceLoop = () => {
+                ctx.beginPath();
+                ctx.moveTo(lut[0].x, lut[0].y);
+                for (let i = 1; i < lut.length; i++) {
+                    ctx.lineTo(lut[i].x, lut[i].y);
+                }
+                ctx.closePath();
+            };
+
+            ctx.save();
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // 1. 賽道外緣陰影
+            traceLoop();
+            ctx.strokeStyle = 'rgba(15, 23, 42, 0.28)';
+            ctx.lineWidth = roadWidth + 24;
+            ctx.stroke();
+
+            // 2. 黃白相間活動主題路肩
+            traceLoop();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = roadWidth + 14;
+            ctx.stroke();
+
+            traceLoop();
+            ctx.setLineDash([24, 24]);
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = roadWidth + 14;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 3. 深色瀝青路面
+            traceLoop();
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = roadWidth;
+            ctx.stroke();
+
+            // 4. 路面中央微亮質感層
+            traceLoop();
+            ctx.strokeStyle = '#3f4e64';
+            ctx.lineWidth = roadWidth * 0.72;
+            ctx.stroke();
+
+            // 5. 黃色虛線行車分道線
+            traceLoop();
+            ctx.setLineDash([28, 28]);
+            ctx.strokeStyle = 'rgba(254, 240, 138, 0.9)';
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.restore();
+        }
+
+        function drawStartFinishArch(ctx) {
+            const pt = sampleRoadAtProgress(0.02);
+            const roadWidth = 104;
+
+            ctx.save();
+            ctx.translate(pt.x, pt.y);
+            ctx.rotate(pt.angle);
+
+            const rows = 2;
+            const cols = 8;
+            const cellW = 10;
+            const cellH = roadWidth / cols;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    ctx.fillStyle = (r + c) % 2 === 0 ? '#ffffff' : '#0f172a';
+                    ctx.fillRect(-cellW + r * cellW, -roadWidth / 2 + c * cellH, cellW, cellH);
+                }
+            }
+
+            // 黃色起點標誌柱
+            ctx.fillStyle = '#facc15';
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, -roadWidth * 0.62, 11, 0, Math.PI * 2);
+            ctx.arc(0, roadWidth * 0.62, 11, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawClouds(ctx, w, h) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+            state.clouds.forEach(c => {
+                const cx = c.x * w;
+                const cy = c.y * h;
+                const r = 38 * c.scale;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.arc(cx + r * 0.8, cy - r * 0.2, r * 0.85, 0, Math.PI * 2);
+                ctx.arc(cx + r * 1.5, cy + r * 0.1, r * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // =========================================================================
+        // 4. 60FPS 動畫主迴圈與小車渲染（1920x1080 虛擬座標縮放）
+        // =========================================================================
+        function animationLoop(timestamp) {
+            if (!state.lastFrameTime) state.lastFrameTime = timestamp;
+            const dt = Math.min((timestamp - state.lastFrameTime) / 1000, 0.1);
+            state.lastFrameTime = timestamp;
+            const timeSec = timestamp / 1000;
+
+            state.clouds.forEach(c => {
+                c.x = (c.x + c.speed * dt) % 1.15;
+            });
+
+            state.cars.forEach(car => {
+                car.progress = (car.progress + car.speed * state.speedMultiplier * dt) % 1;
+                if (car.highlightTimer > 0) car.highlightTimer = Math.max(0, car.highlightTimer - dt);
+
+                // 定期產生可愛車尾白煙粒子
+                car.smokeTimer = (car.smokeTimer || 0) - dt;
+                if (car.smokeTimer <= 0) {
+                    car.smokeTimer = 0.24 + Math.random() * 0.16;
+                    const pose = sampleRoadAtProgress(car.progress);
+                    state.exhaustPuffs.push({
+                        x: pose.x - Math.cos(pose.angle) * 58 * state.carScale,
+                        y: pose.y - Math.sin(pose.angle) * 58 * state.carScale + 12,
+                        vx: -Math.cos(pose.angle) * 24 + (Math.random() - 0.5) * 14,
+                        vy: -Math.sin(pose.angle) * 24 - 12,
+                        life: 0.65,
+                        size: 7 * state.carScale
+                    });
+                }
+            });
+
+            state.sparkles = state.sparkles.filter(sp => {
+                sp.life -= dt;
+                sp.x += sp.vx * dt;
+                sp.y += sp.vy * dt;
+                return sp.life > 0;
+            });
+
+            state.exhaustPuffs = state.exhaustPuffs.filter(pf => {
+                pf.life -= dt;
+                pf.x += pf.vx * dt;
+                pf.y += pf.vy * dt;
+                pf.size += 14 * dt;
+                return pf.life > 0;
+            });
+
+            if (state.mode === 'screen') {
+                rCtx.save();
+                // 將 1920x1080 虛擬舞台座標等比例縮放至實際 Canvas 尺寸
+                const scaleX = roadCanvas.width / STAGE_W;
+                const scaleY = roadCanvas.height / STAGE_H;
+                rCtx.scale(scaleX, scaleY);
+
+                drawScenicWorld(rCtx, STAGE_W, STAGE_H, timeSec);
+                drawExhaustPuffs(rCtx);
+
+                const sortedCars = [...state.cars].map(car => {
+                    const pose = sampleRoadAtProgress(car.progress);
+                    return { car, pose };
+                }).sort((a, b) => a.pose.y - b.pose.y);
+
+                sortedCars.forEach(({ car, pose }) => {
+                    drawParadeCar(rCtx, car, pose, timeSec);
+                });
+
+                drawSparkles(rCtx);
+                rCtx.restore();
+            }
+
+            requestAnimationFrame(animationLoop);
+        }
+
+        function drawExhaustPuffs(ctx) {
+            state.exhaustPuffs.forEach(pf => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, pf.life * 0.55);
+                ctx.fillStyle = '#f8fafc';
+                ctx.beginPath();
+                ctx.arc(pf.x, pf.y, pf.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        function drawParadeCar(ctx, car, pose, timeSec) {
+            const baseCarW = 148 * state.carScale;
+            const aspect = (car.img && car.img.width && car.img.height) ? (car.img.height / car.img.width) : 0.56;
+            const carW = baseCarW;
+            const carH = baseCarW * Math.min(Math.max(aspect, 0.42), 0.9);
+
+            // 引擎行駛微幅律動彈跳
+            const bounce = Math.sin(timeSec * 13 + car.phase) * 2.5;
+
+            ctx.save();
+            ctx.translate(pose.x, pose.y);
+
+            // 新加入小車的金色光環特效
+            if (car.highlightTimer > 0) {
+                const pulse = 1 + Math.sin(timeSec * 10) * 0.14;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(0, 0, carW * 0.72 * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(250, 204, 21, 0.36)';
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#fde047';
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.rotate(pose.angle);
+
+            // 向左行駛時水平鏡像翻轉，確保車頂永遠朝上、車輪貼地
+            const normalizedAngle = ((pose.angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            if (normalizedAngle > Math.PI * 0.5 && normalizedAngle < Math.PI * 1.5) {
+                ctx.scale(1, -1);
+            }
+
+            // 車底地面陰影
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.36)';
+            ctx.beginPath();
+            ctx.ellipse(0, carH * 0.36, carW * 0.44, carH * 0.14, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 車頭燈溫暖光束
+            const beamGrad = ctx.createLinearGradient(carW * 0.42, 0, carW * 0.95, 0);
+            beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+            beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+            ctx.fillStyle = beamGrad;
+            ctx.beginPath();
+            ctx.moveTo(carW * 0.42, -carH * 0.12);
+            ctx.lineTo(carW * 0.95, -carH * 0.32);
+            ctx.lineTo(carW * 0.95, carH * 0.22);
+            ctx.lineTo(carW * 0.42, carH * 0.08);
+            ctx.closePath();
+            ctx.fill();
+
+            // 繪製觀眾創作的小車去背圖片
+            if (car.img && car.img.complete && car.img.naturalWidth > 0) {
+                ctx.drawImage(car.img, -carW / 2, -carH / 2 + bounce, carW, carH);
+            } else {
+                ctx.fillStyle = '#facc15';
+                ctx.fillRect(-carW / 2, -carH / 2, carW, carH);
+            }
+            ctx.restore();
+
+            // 懸浮在車輛正上方的中文車主名牌（永遠保持正向易讀）
+            if (state.showLabels && car.name) {
+                const labelY = -carH * 0.68 - 16;
+                ctx.font = '700 20px "Noto Sans TC", "PingFang HK", sans-serif';
+                const textW = ctx.measureText(car.name).width;
+                const pillW = textW + 28;
+                const pillH = 34;
+
+                ctx.fillStyle = car.highlightTimer > 0 ? '#facc15' : 'rgba(15, 23, 42, 0.88)';
+                ctx.beginPath();
+                ctx.roundRect(-pillW / 2, labelY - pillH / 2, pillW, pillH, 17);
+                ctx.fill();
+
+                ctx.strokeStyle = car.highlightTimer > 0 ? '#ffffff' : 'rgba(250, 204, 21, 0.85)';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+
+                ctx.fillStyle = car.highlightTimer > 0 ? '#0f172a' : '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(car.name, 0, labelY + 1);
+            }
+
+            ctx.restore();
+        }
+
+        function triggerSparkleBurst(progress01) {
+            const pose = sampleRoadAtProgress(progress01);
+            const colors = ['#facc15', '#ffffff', '#38bdf8', '#fb7185', '#4ade80'];
+            for (let i = 0; i < 32; i++) {
+                const ang = (Math.PI * 2 * i) / 32 + Math.random() * 0.3;
+                const spd = 60 + Math.random() * 160;
+                state.sparkles.push({
+                    x: pose.x,
+                    y: pose.y,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd,
+                    life: 1.0 + Math.random() * 0.5,
+                    color: colors[i % colors.length],
+                    size: 6 + Math.random() * 6
+                });
+            }
+        }
+
+        function drawSparkles(ctx) {
+            state.sparkles.forEach(sp => {
+                ctx.save();
+                ctx.globalAlpha = Math.min(1, sp.life * 1.4);
+                ctx.fillStyle = sp.color;
+                ctx.beginPath();
+                ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        // =========================================================================
+        // 5. 智能白紙相片自動去背工作室
+        // =========================================================================
+        const cutoutCanvas = document.getElementById('cutoutCanvas');
+        const cCtx = cutoutCanvas.getContext('2d');
+
+        function initCutoutListeners() {
+            const fileInput = document.getElementById('carFileInput');
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handlePhotoFile(e.target.files[0]);
+                }
+            });
+        }
+
+        function handlePhotoFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    cutoutState.sourceImage = img;
+                    cutoutState.rotation = 0;
+                    cutoutState.flipped = false;
+                    document.getElementById('uploadDropzone').classList.add('hidden');
+                    document.getElementById('cutoutEditorArea').classList.remove('hidden');
+                    processPhotoCutout();
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 載入模擬紙本填色相片，方便現場示範測試去背效果
+        function loadSamplePaperPhoto() {
+            const off = document.createElement('canvas');
+            off.width = 600;
+            off.height = 400;
+            const ctx = off.getContext('2d');
+
+            ctx.fillStyle = '#f4f2ec';
+            ctx.fillRect(0, 0, 600, 400);
+
+            const grad = ctx.createRadialGradient(300, 200, 60, 300, 200, 340);
+            grad.addColorStop(0, 'rgba(255,255,255,0.6)');
+            grad.addColorStop(1, 'rgba(210,205,195,0.45)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 600, 400);
+
+            drawVectorCarArtwork(ctx, 300, 210, 1.0, {
+                bodyColor: '#facc15',
+                stripeColor: '#ef4444',
+                number: '88'
+            });
+
+            const img = new Image();
+            img.onload = () => {
+                cutoutState.sourceImage = img;
+                cutoutState.rotation = 0;
+                cutoutState.flipped = false;
+                document.getElementById('uploadDropzone').classList.add('hidden');
+                document.getElementById('cutoutEditorArea').classList.remove('hidden');
+                processPhotoCutout();
+                showFeedback('已載入範例填色紙相片！可拖動滑桿微調去背範圍。', '✂️');
+            };
+            img.src = off.toDataURL('image/png');
+        }
+
+        function rotateCutout(deg) {
+            cutoutState.rotation = (cutoutState.rotation + deg + 360) % 360;
+            processPhotoCutout();
+        }
+
+        function flipCutout() {
+            cutoutState.flipped = !cutoutState.flipped;
+            processPhotoCutout();
+        }
+
+        function processPhotoCutout() {
+            const img = cutoutState.sourceImage;
+            if (!img) return;
+
+            const thresholdPct = parseInt(document.getElementById('cutoutThreshold').value, 10);
+            const zoom = parseFloat(document.getElementById('cutoutZoom').value);
+            document.getElementById('lblThreshold').textContent = thresholdPct + '%';
+
+            const maxDim = 560;
+            const rotOdd = (cutoutState.rotation % 180 !== 0);
+            const srcW = rotOdd ? img.height : img.width;
+            const srcH = rotOdd ? img.width : img.height;
+            const scale = Math.min(maxDim / srcW, maxDim / srcH, 1);
+
+            const workW = Math.round(srcW * scale);
+            const workH = Math.round(srcH * scale);
+
+            const workCanvas = document.createElement('canvas');
+            workCanvas.width = workW;
+            workCanvas.height = workH;
+            const wCtx = workCanvas.getContext('2d');
+
+            wCtx.save();
+            wCtx.translate(workW / 2, workH / 2);
+            wCtx.scale((cutoutState.flipped ? -1 : 1) * zoom, zoom);
+            wCtx.rotate((cutoutState.rotation * Math.PI) / 180);
+            const drawW = (rotOdd ? workH : workW);
+            const drawH = (rotOdd ? workW : workH);
+            wCtx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+            wCtx.restore();
+
+            const imgData = wCtx.getImageData(0, 0, workW, workH);
+            const data = imgData.data;
+
+            const minLuma = 255 - (thresholdPct * 1.35);
+            const maxChroma = 24 + (thresholdPct * 0.45);
+
+            let minX = workW, minY = workH, maxX = 0, maxY = 0;
+            let opaqueCount = 0;
+
+            for (let y = 0; y < workH; y++) {
+                for (let x = 0; x < workW; x++) {
+                    const idx = (y * workW + x) * 4;
+                    const r = data[idx];
+                    const g = data[idx + 1];
+                    const b = data[idx + 2];
+
+                    const maxC = Math.max(r, g, b);
+                    const minC = Math.min(r, g, b);
+                    const chroma = maxC - minC;
+                    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                    if (thresholdPct > 0 && luma > minLuma && chroma < maxChroma) {
+                        const edgeSoftness = Math.max(0, Math.min(1, (minLuma + 16 - luma) / 16));
+                        data[idx + 3] = Math.round(data[idx + 3] * edgeSoftness);
+                    }
+
+                    if (data[idx + 3] > 40) {
+                        opaqueCount++;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+
+            wCtx.putImageData(imgData, 0, 0);
+
+            if (opaqueCount > 80 && maxX > minX && maxY > minY) {
+                const pad = 10;
+                const cx = Math.max(0, minX - pad);
+                const cy = Math.max(0, minY - pad);
+                const cw = Math.min(workW - cx, (maxX - minX) + pad * 2);
+                const ch = Math.min(workH - cy, (maxY - minY) + pad * 2);
+
+                cutoutCanvas.width = cw;
+                cutoutCanvas.height = ch;
+                cCtx.clearRect(0, 0, cw, ch);
+                cCtx.drawImage(workCanvas, cx, cy, cw, ch, 0, 0, cw, ch);
+            } else {
+                cutoutCanvas.width = workW;
+                cutoutCanvas.height = workH;
+                cCtx.clearRect(0, 0, workW, workH);
+                cCtx.drawImage(workCanvas, 0, 0);
+            }
+
+            cutoutState.processedDataUrl = cutoutCanvas.toDataURL('image/png');
+        }
+
+        // =========================================================================
+        // 6. 即時手繪工作室（支援觸控與滑鼠）
+        // =========================================================================
+        const paintCanvas = document.getElementById('paintCanvas');
+        const pCtx = paintCanvas.getContext('2d');
+
+        const userInkLayer = document.createElement('canvas');
+        userInkLayer.width = paintCanvas.width;
+        userInkLayer.height = paintCanvas.height;
+        const inkCtx = userInkLayer.getContext('2d');
+
+        const PALETTE_COLORS = [
+            '#facc15', // 經典巡遊黃
+            '#f59e0b', // 琥珀金
+            '#ef4444', // 賽車紅
+            '#f97316', // 活力橙
+            '#3b82f6', // 天空藍
+            '#10b981', // 翡翠綠
+            '#a855f7', // 夢幻紫
+            '#ec4899', // 蜜桃粉
+            '#0f172a', // 酷炫黑
+            '#ffffff'  // 純潔白
+        ];
+
+        function initPaintStudio() {
+            const swatchWrap = document.getElementById('colorSwatches');
+            PALETTE_COLORS.forEach((hex, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-8 h-8 rounded-full border-2 transition transform hover:scale-110 ${idx === 2 ? 'ring-2 ring-offset-2 ring-slate-900 scale-110' : 'border-slate-300'}`;
+                btn.style.backgroundColor = hex;
+                btn.onclick = () => {
+                    paintState.color = hex;
+                    paintState.isEraser = false;
+                    document.getElementById('btnEraser').classList.remove('bg-yellow-300', 'border-slate-900');
+                    Array.from(swatchWrap.children).forEach(c => c.classList.remove('ring-2', 'ring-offset-2', 'ring-slate-900', 'scale-110'));
+                    btn.classList.add('ring-2', 'ring-offset-2', 'ring-slate-900', 'scale-110');
+                };
+                swatchWrap.appendChild(btn);
+            });
+
+            resetPaintCanvas();
+
+            const getPos = (e) => {
+                const rect = paintCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (paintCanvas.width / rect.width),
+                    y: (clientY - rect.top) * (paintCanvas.height / rect.height)
+                };
+            };
+
+            const startStroke = (e) => {
+                e.preventDefault();
+                savePaintHistory();
+                paintState.isDrawing = true;
+                const pt = getPos(e);
+                inkCtx.lineCap = 'round';
+                inkCtx.lineJoin = 'round';
+                inkCtx.lineWidth = paintState.brushSize;
+                if (paintState.isEraser) {
+                    inkCtx.globalCompositeOperation = 'destination-out';
+                    inkCtx.strokeStyle = 'rgba(0,0,0,1)';
+                } else {
+                    inkCtx.globalCompositeOperation = 'source-over';
+                    inkCtx.strokeStyle = paintState.color;
+                }
+                inkCtx.beginPath();
+                inkCtx.moveTo(pt.x, pt.y);
+                inkCtx.lineTo(pt.x + 0.1, pt.y + 0.1);
+                inkCtx.stroke();
+                compositePaintStudio();
+            };
+
+            const moveStroke = (e) => {
+                if (!paintState.isDrawing) return;
+                e.preventDefault();
+                const pt = getPos(e);
+                inkCtx.lineTo(pt.x, pt.y);
+                inkCtx.stroke();
+                compositePaintStudio();
+            };
+
+            const endStroke = () => {
+                paintState.isDrawing = false;
+                inkCtx.globalCompositeOperation = 'source-over';
+            };
+
+            paintCanvas.addEventListener('mousedown', startStroke);
+            paintCanvas.addEventListener('mousemove', moveStroke);
+            window.addEventListener('mouseup', endStroke);
+
+            paintCanvas.addEventListener('touchstart', startStroke, { passive: false });
+            paintCanvas.addEventListener('touchmove', moveStroke, { passive: false });
+            window.addEventListener('touchend', endStroke);
+        }
+
+        function setBrushSize(sz) {
+            paintState.brushSize = sz;
+            paintState.isEraser = false;
+            document.getElementById('btnEraser').classList.remove('bg-yellow-300', 'border-slate-900');
+            document.querySelectorAll('.brush-size-btn').forEach(btn => {
+                btn.classList.toggle('bg-yellow-200', parseInt(btn.dataset.size, 10) === sz);
+            });
+        }
+
+        function setEraserMode() {
+            paintState.isEraser = !paintState.isEraser;
+            document.getElementById('btnEraser').classList.toggle('bg-yellow-300', paintState.isEraser);
+            document.getElementById('btnEraser').classList.toggle('border-slate-900', paintState.isEraser);
+        }
+
+        function savePaintHistory() {
+            if (paintState.history.length > 15) paintState.history.shift();
+            paintState.history.push(inkCtx.getImageData(0, 0, userInkLayer.width, userInkLayer.height));
+        }
+
+        function undoPaint() {
+            if (paintState.history.length === 0) return;
+            const prev = paintState.history.pop();
+            inkCtx.putImageData(prev, 0, 0);
+            compositePaintStudio();
+        }
+
+        function resetPaintCanvas() {
+            paintState.history = [];
+            inkCtx.clearRect(0, 0, userInkLayer.width, userInkLayer.height);
+            compositePaintStudio();
+        }
+
+        function compositePaintStudio() {
+            const w = paintCanvas.width;
+            const h = paintCanvas.height;
+            pCtx.clearRect(0, 0, w, h);
+
+            pCtx.save();
+            traceCarBodyPath(pCtx, w / 2, h / 2 + 12, 1.18);
+            pCtx.fillStyle = '#facc15';
+            pCtx.fill();
+
+            pCtx.clip();
+            pCtx.drawImage(userInkLayer, 0, 0);
+            pCtx.restore();
+
+            drawCarOutlinesAndWheels(pCtx, w / 2, h / 2 + 12, 1.18);
+        }
+
+        // =========================================================================
+        // 7. 向量黃色小車造型繪製器（供手繪室及示範車隊使用）
+        // =========================================================================
+        function traceCarBodyPath(ctx, cx, cy, scale) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(scale, scale);
+            ctx.beginPath();
+            ctx.moveTo(-185, 42);
+            ctx.lineTo(-195, 42);
+            ctx.quadraticCurveTo(-212, 42, -208, 20);
+            ctx.lineTo(-198, -12);
+            ctx.quadraticCurveTo(-192, -28, -165, -30);
+            ctx.lineTo(-105, -36);
+            ctx.lineTo(-60, -82);
+            ctx.quadraticCurveTo(-44, -98, -12, -98);
+            ctx.lineTo(75, -98);
+            ctx.quadraticCurveTo(105, -98, 125, -72);
+            ctx.lineTo(155, -34);
+            ctx.lineTo(188, -26);
+            ctx.quadraticCurveTo(210, -20, 210, 4);
+            ctx.lineTo(210, 30);
+            ctx.quadraticCurveTo(210, 42, 192, 42);
+            ctx.closePath();
+            ctx.restore();
+        }
+
+        function drawCarOutlinesAndWheels(ctx, cx, cy, scale) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(scale, scale);
+
+            traceCarBodyPath(ctx, 0, 0, 1);
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            ctx.fillStyle = '#bae6fd';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(-88, -36);
+            ctx.lineTo(-52, -78);
+            ctx.quadraticCurveTo(-42, -85, -26, -85);
+            ctx.lineTo(8, -85);
+            ctx.lineTo(8, -36);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(22, -85);
+            ctx.lineTo(72, -85);
+            ctx.quadraticCurveTo(90, -85, 102, -70);
+            ctx.lineTo(128, -36);
+            ctx.lineTo(22, -36);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(45, -75);
+            ctx.lineTo(35, -48);
+            ctx.moveTo(-40, -75);
+            ctx.lineTo(-50, -48);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(15, -30);
+            ctx.lineTo(15, 36);
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.roundRect(-22, -16, 20, 7, 3);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath();
+            ctx.ellipse(202, -8, 7, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.roundRect(-207, -14, 11, 20, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            [-125, 125].forEach(wx => {
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(wx, 44, 42, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#0f172a';
+                ctx.stroke();
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath();
+                ctx.arc(wx, 44, 21, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(wx, 44, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+
+        function drawVectorCarArtwork(ctx, cx, cy, scale, opts = {}) {
+            traceCarBodyPath(ctx, cx, cy, scale);
+            ctx.fillStyle = opts.bodyColor || '#facc15';
+            ctx.fill();
+
+            ctx.save();
+            traceCarBodyPath(ctx, cx, cy, scale);
+            ctx.clip();
+
+            ctx.fillStyle = opts.stripeColor || '#ef4444';
+            ctx.fillRect(cx - 220 * scale, cy - 6 * scale, 440 * scale, 16 * scale);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cx - 10 * scale, cy + 4 * scale, 22 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#0f172a';
+            ctx.font = `bold ${Math.round(20 * scale)}px Fredoka, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(opts.number || '01', cx - 10 * scale, cy + 5 * scale);
+
+            ctx.restore();
+            drawCarOutlinesAndWheels(ctx, cx, cy, scale);
+        }
+
+        // =========================================================================
+        // 8. 傳送小車至大銀幕與多裝置／多分頁即時同步
+        // =========================================================================
+        function launchCarToTrack() {
+            const rawName = document.getElementById('driverNameInput').value.trim();
+            const driverName = rawName || '黃色小車 #' + (state.cars.length + 1);
+
+            let carDataUrl = null;
+            if (state.stationTab === 'photo') {
+                if (!cutoutState.processedDataUrl) {
+                    showFeedback('請先拍攝或上傳填色相片，或切換至「即時手繪小車」！', '📸');
+                    return;
+                }
+                carDataUrl = cutoutState.processedDataUrl;
+            } else {
+                carDataUrl = exportTightPaintCutout();
+            }
+
+            const newCarRecord = {
+                id: 'car_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                name: driverName,
+                dataUrl: carDataUrl,
+                progress: 0.02,
+                speed: 0.036 + Math.random() * 0.016,
+                phase: Math.random() * Math.PI * 2
+            };
+
+            addCarObject(newCarRecord, true);
+            saveCarsToStorage();
+
+            if (syncChannel) {
+                syncChannel.postMessage({ type: 'NEW_CAR', car: newCarRecord });
+            }
+
+            switchMode('screen');
+            triggerArrivalBanner(driverName);
+            document.getElementById('driverNameInput').value = '';
+        }
+
+        function exportTightPaintCutout() {
+            const w = paintCanvas.width;
+            const h = paintCanvas.height;
+            const imgData = pCtx.getImageData(0, 0, w, h).data;
+            let minX = w, minY = h, maxX = 0, maxY = 0;
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    if (imgData[(y * w + x) * 4 + 3] > 20) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+
+            const pad = 8;
+            const cx = Math.max(0, minX - pad);
+            const cy = Math.max(0, minY - pad);
+            const cw = Math.min(w - cx, (maxX - minX) + pad * 2);
+            const ch = Math.min(h - cy, (maxY - minY) + pad * 2);
+
+            const crop = document.createElement('canvas');
+            crop.width = Math.max(10, cw);
+            crop.height = Math.max(10, ch);
+            crop.getContext('2d').drawImage(paintCanvas, cx, cy, cw, ch, 0, 0, cw, ch);
+            return crop.toDataURL('image/png');
+        }
+
+        function addCarObject(record, isFreshArrival = false) {
+            if (state.cars.some(c => c.id === record.id)) return;
+            const img = new Image();
+            img.src = record.dataUrl;
+
+            const carObj = {
+                ...record,
+                img,
+                highlightTimer: isFreshArrival ? 6.0 : 0,
+                smokeTimer: Math.random() * 0.25
+            };
+            state.cars.push(carObj);
+            updateCarCounter();
+
+            if (isFreshArrival) {
+                triggerSparkleBurst(carObj.progress);
+            }
+        }
+
+        function ingestExternalCar(record) {
+            addCarObject(record, true);
+            triggerArrivalBanner(record.name);
+        }
+
+        function triggerArrivalBanner(name) {
+            const toast = document.getElementById('arrivalToast');
+            document.getElementById('arrivalToastText').textContent = name;
+            toast.classList.remove('opacity-0', '-translate-y-4');
+            clearTimeout(toast._t);
+            toast._t = setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-4');
+            }, 4200);
+        }
+
+        function updateCarCounter() {
+            document.getElementById('carCountBadge').textContent = state.cars.length;
+        }
+
+        function saveCarsToStorage() {
+            try {
+                const serializable = state.cars.slice(-35).map(({ id, name, dataUrl, progress, speed, phase }) => ({
+                    id, name, dataUrl, progress, speed, phase
+                }));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
+            } catch (err) {
+                console.warn('儲存空間已滿，車輛將保留於目前記憶體中。', err);
+            }
+        }
+
+        function loadCarsFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const list = JSON.parse(raw);
+                list.forEach(item => addCarObject(item, false));
+            } catch (err) {
+                console.warn('讀取儲存車輛資料失敗。', err);
+            }
+        }
+
+        function clearAllCars() {
+            state.cars = [];
+            updateCarCounter();
+            localStorage.removeItem(STORAGE_KEY);
+            if (syncChannel) {
+                syncChannel.postMessage({ type: 'CLEAR_CARS' });
+            }
+            showFeedback('已清空賽道，隨時歡迎新小車登場！', '🧹');
+        }
+
+        // 生成繁體中文示範車隊，讓大銀幕一開啟即充滿活力
+        function spawnDemoFleet(count = 5, silent = false) {
+            const presets = [
+                { name: '陳小明', body: '#facc15', stripe: '#ef4444', num: '01' },
+                { name: '林美玲', body: '#fde047', stripe: '#3b82f6', num: '07' },
+                { name: '黃伯伯', body: '#eab308', stripe: '#10b981', num: '22' },
+                { name: '李婆婆', body: '#facc15', stripe: '#ec4899', num: '88' },
+                { name: '張家豪', body: '#fef08a', stripe: '#f97316', num: '15' },
+                { name: '周小晴 ❤️', body: '#facc15', stripe: '#a855f7', num: '99' }
+            ];
+
+            for (let i = 0; i < count; i++) {
+                const p = presets[(state.cars.length + i) % presets.length];
+                const off = document.createElement('canvas');
+                off.width = 440;
+                off.height = 240;
+                const ctx = off.getContext('2d');
+                drawVectorCarArtwork(ctx, 220, 125, 0.96, {
+                    bodyColor: p.body,
+                    stripeColor: p.stripe,
+                    number: p.num
+                });
+
+                const rec = {
+                    id: 'demo_' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2, 5),
+                    name: p.name,
+                    dataUrl: off.toDataURL('image/png'),
+                    progress: ((i / count) + Math.random() * 0.08) % 1,
+                    speed: 0.034 + Math.random() * 0.018,
+                    phase: Math.random() * Math.PI * 2
+                };
+                addCarObject(rec, !silent);
+            }
+            saveCarsToStorage();
+            if (!silent) showFeedback(`已加入 ${count} 輛示範黃色小車到巡遊賽道！`, '🚗');
+        }
+    </script>
+</body>
+</html>
