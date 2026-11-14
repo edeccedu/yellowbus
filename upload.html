@@ -19,7 +19,6 @@
         input[type="text"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; }
         input[type="text"]:focus { border-color: #fbc02d; outline: none; }
 
-        /* 手繪畫布區 */
         .paint-container { position: relative; width: 100%; aspect-ratio: 16 / 9; background: white; border: 3px solid #ffb300; border-radius: 12px; overflow: hidden; touch-action: none; cursor: crosshair; }
         canvas#paintCanvas { width: 100%; height: 100%; display: block; }
 
@@ -42,14 +41,13 @@
 
 <div class="container">
     <h1>🚌 黃色巴士上傳與手繪工作坊</h1>
-    <p class="subtitle">為您的黃色校車塗上色彩，或拍照去背上傳，即刻加入大銀幕巡遊！</p>
+    <p class="subtitle">為您的黃色校車塗上色彩，或拍照上傳，即刻加入大銀幕巡遊！</p>
 
     <div class="form-group">
         <label for="busName">🏷️ 輸入您的巴士名稱 / 車主姓名：</label>
         <input type="text" id="busName" placeholder="例如：快樂陽光號 (陳小明)" maxlength="20">
     </div>
 
-    <!-- 即時手繪校車區 -->
     <div class="section">
         <h2>🎨 手機即時手繪校車</h2>
         <p style="font-size: 13px; color: #666; margin-bottom: 10px;">在下方黃色校車上自由畫上圖案與色彩（支援手指觸控或滑鼠）！</p>
@@ -67,32 +65,44 @@
                 <div class="color-btn" style="background: #8e24aa;" onclick="setPenColor('#8e24aa', this)"></div>
                 <div class="color-btn" style="background: #212121;" onclick="setPenColor('#212121', this)"></div>
             </div>
-            <div style="display: flex; gap: 8px;">
+            <div>
                 <button class="btn btn-secondary" onclick="clearCanvas()">🗑️ 清除重畫</button>
             </div>
         </div>
     </div>
 
-    <!-- 照片上傳去背區 -->
     <div class="section">
-        <h2>📷 或上傳紙本填色照片 / 自訂圖片</h2>
+        <h2>📷 或上傳自訂圖片</h2>
         <input type="file" id="imageInput" accept="image/*" style="margin-bottom: 10px; width: 100%;">
-        <p style="font-size: 12px; color: #666;">系統會自動去除白色/淺色背景並擷取您的校車作品。</p>
     </div>
 
-    <button class="btn btn-green" onclick="submitBusToParade()">🚀 發射巴士加入大銀幕巡遊！</button>
+    <button class="btn btn-green" id="submitBtn" onclick="submitBusToParade()">🚀 發射巴士加入大銀幕巡遊！</button>
 
     <div id="successBanner" class="success-banner">
         <h3>🎉 發射成功！</h3>
-        <p>您的專屬黃色校車已經順利加入大銀幕賽道，快去大銀幕觀看它巡遊吧！</p>
+        <p>您的專屬黃色校車已經順利透過雲端飛上大銀幕賽道！</p>
         <button class="btn" style="margin-top: 15px;" onclick="resetForm()">再發射一輛</button>
     </div>
 </div>
 
-<script>
-    const bc = new BroadcastChannel('bus_parade_channel');
+<!-- Firebase SDK 模組引入 -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 初始化手繪畫布
+    const firebaseConfig = {
+        apiKey: "AIzaSyC64OxwmFLAwmzcnl_BQaXM-_mC6PTFWHM",
+        authDomain: "yellowbus-12d4a.firebaseapp.com",
+        projectId: "yellowbus-12d4a",
+        storageBucket: "yellowbus-12d4a.firebasestorage.app",
+        messagingSenderId: "320843319933",
+        appId: "1:320843319933:web:86cc6e3a673baaccb57f14",
+        measurementId: "G-3KBP4ZWSBB"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
     const canvas = document.getElementById('paintCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -106,7 +116,6 @@
     let penWidth = 10;
     let customImageBase64 = null;
 
-    // 繪製校車底圖範本於畫布背景
     function drawBusTemplate() {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, internalW, internalH);
@@ -115,37 +124,23 @@
         ctx.translate(internalW / 2, internalH / 2);
         ctx.scale(1.8, 1.8);
 
-        // 1. 車頂行李架
         ctx.fillStyle = '#546e7a';
-        ctx.beginPath();
-        ctx.roundRect(-50, -60, 130, 14, 4);
-        ctx.fill();
+        ctx.beginPath(); ctx.roundRect(-50, -60, 130, 14, 4); ctx.fill();
 
-        // 2. 校車車身主體
-        ctx.fillStyle = '#fffde7'; // 填色底
+        ctx.fillStyle = '#fffde7';
         ctx.beginPath();
-        ctx.moveTo(-90, 45);
-        ctx.lineTo(-90, 20);
-        ctx.lineTo(-100, -5);
-        ctx.lineTo(-75, -45);
-        ctx.lineTo(80, -48);
-        ctx.quadraticCurveTo(105, -48, 105, -20);
-        ctx.lineTo(105, 45);
-        ctx.closePath();
-        ctx.fill();
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#37474f';
-        ctx.stroke();
+        ctx.moveTo(-90, 45); ctx.lineTo(-90, 20); ctx.lineTo(-100, -5);
+        ctx.lineTo(-75, -45); ctx.lineTo(80, -48);
+        ctx.quadraticCurveTo(105, -48, 105, -20); ctx.lineTo(105, 45);
+        ctx.closePath(); ctx.fill();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#37474f'; ctx.stroke();
 
-        // 3. 側邊腰線
         ctx.fillStyle = '#4e342e';
         ctx.fillRect(-90, 5, 200, 7);
         ctx.fillRect(-90, 20, 200, 6);
 
-        // 4. 車窗
         ctx.fillStyle = '#e1f5fe';
-        ctx.beginPath();
-        ctx.moveTo(-73, -40); ctx.lineTo(-52, -40); ctx.lineTo(-52, 2); ctx.lineTo(-88, 2); ctx.closePath();
+        ctx.beginPath(); ctx.moveTo(-73, -40); ctx.lineTo(-52, -40); ctx.lineTo(-52, 2); ctx.lineTo(-88, 2); ctx.closePath();
         ctx.fill(); ctx.stroke();
 
         [-40, -10, 20, 50].forEach(wx => {
@@ -153,13 +148,11 @@
             ctx.strokeRect(wx, -38, 24, 26);
         });
 
-        // 5. 前視鏡與保險桿
         ctx.fillStyle = '#37474f';
         ctx.fillRect(-85, -30, 8, 18);
         ctx.fillRect(-89, -35, 12, 6);
         ctx.fillRect(-102, 45, 207, 7);
 
-        // 6. 車輪
         [-55, 55].forEach(wx => {
             ctx.fillStyle = '#212121';
             ctx.beginPath(); ctx.arc(wx, 50, 22, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -172,19 +165,18 @@
 
     drawBusTemplate();
 
-    function setPenColor(color, btn) {
+    window.setPenColor = function(color, btn) {
         penColor = color;
         document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-    }
+    };
 
-    function clearCanvas() {
+    window.clearCanvas = function() {
         ctx.clearRect(0, 0, internalW, internalH);
         drawBusTemplate();
         customImageBase64 = null;
-    }
+    };
 
-    // 觸控與滑鼠繪圖事件
     function getCanvasPos(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -200,90 +192,9 @@
         if (!isDrawing) return;
         const p = getCanvasPos(e);
         ctx.lineTo(p.x, p.y);
-        ctx.strokeStyle = penColor;
-        ctx.lineWidth = penWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
+        ctx.strokeStyle = penColor; ctx.lineWidth = penWidth;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
     });
     window.addEventListener('mouseup', () => { isDrawing = false; });
 
-    canvas.addEventListener('touchstart', (e) => { isDrawing = true; const p = getCanvasPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); });
-    canvas.addEventListener('touchmove', (e) => {
-        if (!isDrawing) return;
-        const p = getCanvasPos(e);
-        ctx.lineTo(p.x, p.y);
-        ctx.strokeStyle = penColor;
-        ctx.lineWidth = penWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
-        e.preventDefault();
-    }, {passive: false});
-    window.addEventListener('touchend', () => { isDrawing = false; });
-
-    // 照片上傳去背
-    document.getElementById('imageInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                // 簡易去背或直接繪製至畫布
-                ctx.clearRect(0, 0, internalW, internalH);
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, internalW, internalH);
-                
-                // 等比例置中繪製
-                const scale = Math.min(internalW / img.width, internalH / img.height) * 0.85;
-                const w = img.width * scale;
-                const h = img.height * scale;
-                ctx.drawImage(img, (internalW - w) / 2, (internalH - h) / 2, w, h);
-                customImageBase64 = canvas.toDataURL('image/png');
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-
-    function submitBusToParade() {
-        const nameInput = document.getElementById('busName').value.trim();
-        const busName = nameInput || ('參加者 ' + Math.floor(Math.random() * 900 + 100));
-        const imgData = customImageBase64 || canvas.toDataURL('image/png');
-
-        const newBus = {
-            id: 'bus_' + Date.now() + '_' + Math.random().toString(36.2),
-            name: busName,
-            dist: Math.random() * 0.8,
-            speedMul: 0.9 + Math.random() * 0.3,
-            color: '#fbc02d',
-            imgUrl: imgData,
-            hidden: false
-        };
-
-        // 儲存至 localStorage 並廣播
-        let buses = [];
-        const saved = localStorage.getItem('bus_parade_list');
-        if (saved) {
-            try { buses = JSON.parse(saved); } catch(e) {}
-        }
-        buses.push(newBus);
-        localStorage.setItem('bus_parade_list', JSON.stringify(buses));
-        bc.postMessage({ type: 'ADD_BUS', bus: newBus });
-        bc.postMessage({ type: 'UPDATE_BUSES', buses });
-
-        document.querySelector('.container').style.display = 'none';
-        document.getElementById('successBanner').style.display = 'block';
-    }
-
-    function resetForm() {
-        document.getElementById('busName').value = '';
-        clearCanvas();
-        document.getElementById('imageInput').value = '';
-        document.getElementById('successBanner').style.display = 'none';
-        document.querySelector('.container').style.display = 'block';
-    }
-</script>
-</body>
-</html>
+    canvas.addEventListener('touchstart', (e) => { isDrawing = true; const p = getCanvasPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
