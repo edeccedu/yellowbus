@@ -63,4 +63,339 @@
             bottom: 20px; right: 20px;
             background: rgba(0,0,0,0.6);
             color: white; border: 2px solid white;
-            padding: 10px 20px; border-radius:
+            padding: 10px 20px; border-radius: 30px;
+            cursor: pointer; font-weight: bold; font-size: 16px;
+            z-index: 10; backdrop-filter: blur(5px);
+        }
+        .fs-btn:hover { background: white; color: black; }
+    </style>
+</head>
+<body>
+
+<div id="stage-container">
+    <div class="top-bar">
+        <div class="badge">🚌 黃色巴士大巡遊 ｜ 大銀幕展示</div>
+        <div class="nav-links">
+            <a href="upload.html" target="_blank" class="nav-btn">📱 觀眾上傳頁面</a>
+            <a href="backstage.html" target="_blank" class="nav-btn">🎛️ 後台控制台</a>
+        </div>
+    </div>
+
+    <canvas id="trackCanvas"></canvas>
+
+    <button class="fs-btn" onclick="toggleFullScreen()">⛶ 全螢幕播放</button>
+</div>
+
+<!-- Firebase SDK 模組引入 -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC64OxwmFLAwmzcnl_BQaXM-_mC6PTFWHM",
+        authDomain: "yellowbus-12d4a.firebaseapp.com",
+        projectId: "yellowbus-12d4a",
+        storageBucket: "yellowbus-12d4a.firebasestorage.app",
+        messagingSenderId: "320843319933",
+        appId: "1:320843319933:web:86cc6e3a673baaccb57f14",
+        measurementId: "G-3KBP4ZWSBB"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const canvas = document.getElementById('trackCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const LOGICAL_WIDTH = 1920;
+    const LOGICAL_HEIGHT = 1080;
+    canvas.width = LOGICAL_WIDTH;
+    canvas.height = LOGICAL_HEIGHT;
+
+    let busSpeed = 1.5;
+    let maxBuses = 12;
+    let busSizeScale = 1.0;
+    let focusedBusId = null;
+    let focusTimer = 0;
+    let buses = [];
+
+    // 即時監聽 Firestore 資料庫中的巴士與設定
+    onSnapshot(collection(db, "buses"), (snapshot) => {
+        buses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    });
+
+    onSnapshot(doc(db, "settings", "global"), (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.speed !== undefined) busSpeed = data.speed;
+            if (data.maxBuses !== undefined) maxBuses = data.maxBuses;
+            if (data.busSize !== undefined) busSizeScale = data.busSize;
+            if (data.focusedBusId !== undefined) {
+                focusedBusId = data.focusedBusId;
+                focusTimer = 360;
+            }
+        }
+    });
+
+    const trackPoints = [
+        {x: 300, y: 850},
+        {x: 960, y: 920},
+        {x: 1620, y: 850},
+        {x: 1780, y: 600},
+        {x: 1600, y: 350},
+        {x: 960, y: 220},
+        {x: 320, y: 350},
+        {x: 140, y: 600}
+    ];
+
+    function getBezierPoint(t) {
+        const n = trackPoints.length;
+        const scaledT = t * n;
+        const i = Math.floor(scaledT) % n;
+        const nextI = (i + 1) % n;
+        const nextNextI = (i + 2) % n;
+        const prevI = (i - 1 + n) % n;
+        const localT = scaledT - i;
+
+        const p0 = trackPoints[prevI];
+        const p1 = trackPoints[i];
+        const p2 = trackPoints[nextI];
+        const p3 = trackPoints[nextNextI];
+
+        const tt = localT * localT;
+        const ttt = tt * localT;
+
+        const x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * localT + (2*p0.x - 5*p1.x + 4*p2.x - p3.x) * tt + (-p0.x + 3*p1.x - 3*p2.x + p3.x) * ttt);
+        const y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * localT + (2*p0.y - 5*p1.y + 4*p2.y - p3.y) * tt + (-p0.y + 3*p1.y - 3*p2.y + p3.y) * ttt);
+
+        const dt = 0.001;
+        const nextPos = getRawPoint(t + dt > 1 ? t + dt - 1 : t + dt);
+        const dx = nextPos.x - x;
+        const dy = nextPos.y - y;
+        const angle = Math.atan2(dy, dx);
+
+        return {x, y, angle};
+    }
+
+    function getRawPoint(t) {
+        const n = trackPoints.length;
+        const scaledT = t * n;
+        const i = Math.floor(scaledT) % n;
+        const nextI = (i + 1) % n;
+        const nextNextI = (i + 2) % n;
+        const prevI = (i - 1 + n) % n;
+        const localT = scaledT - i;
+        const p0 = trackPoints[prevI], p1 = trackPoints[i], p2 = trackPoints[nextI], p3 = trackPoints[nextNextI];
+        const tt = localT * localT, ttt = tt * localT;
+        const x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * localT + (2*p0.x - 5*p1.x + 4*p2.x - p3.x) * tt + (-p0.x + 3*p1.x - 3*p2.x + p3.x) * ttt);
+        const y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * localT + (2*p0.y - 5*p1.y + 4*p2.y - p3.y) * tt + (-p0.y + 3*p1.y - 3*p2.y + p3.y) * ttt);
+        return {x, y};
+    }
+
+    const busImageCache = {};
+    function drawSchoolBus(ctx, width, height, customColor, imgUrl) {
+        ctx.save();
+        ctx.scale(width / 220, height / 130);
+
+        if (imgUrl) {
+            if (!busImageCache[imgUrl]) {
+                const img = new Image();
+                img.src = imgUrl;
+                busImageCache[imgUrl] = img;
+            }
+            const img = busImageCache[imgUrl];
+            if (img.complete && img.naturalWidth > 0) {
+                ctx.drawImage(img, -110, -65, 220, 130);
+                ctx.restore();
+                return;
+            }
+        }
+
+        const bodyColor = customColor || '#fbc02d';
+        ctx.fillStyle = '#546e7a';
+        ctx.beginPath();
+        ctx.roundRect(-50, -60, 130, 14, 4);
+        ctx.fill();
+
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(-90, 45);
+        ctx.lineTo(-90, 20);
+        ctx.lineTo(-100, -5);
+        ctx.lineTo(-75, -45);
+        ctx.lineTo(80, -48);
+        ctx.quadraticCurveTo(105, -48, 105, -20);
+        ctx.lineTo(105, 45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#37474f';
+        ctx.stroke();
+
+        ctx.fillStyle = '#4e342e';
+        ctx.fillRect(-90, 5, 200, 7);
+        ctx.fillRect(-90, 20, 200, 6);
+
+        ctx.fillStyle = '#b3e5fc';
+        ctx.beginPath();
+        ctx.moveTo(-73, -40); ctx.lineTo(-52, -40); ctx.lineTo(-52, 2); ctx.lineTo(-88, 2);
+        ctx.closePath(); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#37474f'; ctx.stroke();
+
+        [-40, -10, 20, 50].forEach(wx => {
+            ctx.fillStyle = '#b3e5fc';
+            ctx.fillRect(wx, -38, 24, 26);
+            ctx.lineWidth = 2; ctx.strokeStyle = '#37474f'; ctx.strokeRect(wx, -38, 24, 26);
+        });
+
+        ctx.fillStyle = '#37474f';
+        ctx.fillRect(-85, -30, 8, 18);
+        ctx.fillRect(-89, -35, 12, 6);
+        ctx.fillStyle = '#90a4ae';
+        ctx.fillRect(-25, 32, 50, 15);
+        ctx.fillRect(-102, 45, 207, 7);
+        ctx.fillRect(85, 22, 15, 6);
+
+        [-55, 55].forEach(wx => {
+            ctx.fillStyle = '#212121';
+            ctx.beginPath(); ctx.arc(wx, 50, 22, 0, Math.PI * 2); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#424242'; ctx.stroke();
+            ctx.fillStyle = '#f5f5f5';
+            ctx.beginPath(); ctx.arc(wx, 50, 10, 0, Math.PI * 2); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#616161'; ctx.stroke();
+        });
+
+        ctx.restore();
+    }
+
+    function drawBackground() {
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, LOGICAL_HEIGHT);
+        skyGrad.addColorStop(0, '#4fc3f7');
+        skyGrad.addColorStop(0.7, '#b3e5fc');
+        skyGrad.addColorStop(1, '#e1f5fe');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+
+        ctx.fillStyle = '#81c784';
+        ctx.beginPath();
+        ctx.moveTo(0, 750); ctx.lineTo(0, 500);
+        ctx.quadraticCurveTo(300, 320, 650, 500);
+        ctx.quadraticCurveTo(1100, 300, 1500, 480);
+        ctx.quadraticCurveTo(1750, 400, 1920, 520);
+        ctx.lineTo(1920, 750); ctx.fill();
+
+        ctx.fillStyle = '#aed581';
+        ctx.fillRect(0, 700, LOGICAL_WIDTH, LOGICAL_HEIGHT - 700);
+
+        ctx.fillStyle = '#29b6f6';
+        ctx.beginPath(); ctx.ellipse(960, 600, 380, 140, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.lineWidth = 8; ctx.strokeStyle = '#0288d1'; ctx.stroke();
+
+        drawCottage(400, 520);
+        drawWindmill(1480, 480);
+
+        ctx.beginPath();
+        for (let t = 0; t <= 1; t += 0.002) {
+            const pt = getBezierPoint(t);
+            if (t === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.closePath();
+        ctx.lineWidth = 140; ctx.strokeStyle = '#795548'; ctx.stroke();
+
+        ctx.lineWidth = 120; ctx.strokeStyle = '#e0e0e0'; ctx.stroke();
+
+        ctx.lineWidth = 6; ctx.setLineDash([25, 25]); ctx.strokeStyle = '#ffffff'; ctx.stroke();
+        ctx.setLineDash([]);
+        drawStartArch(300, 850);
+    }
+
+    function drawCottage(x, y) {
+        ctx.save(); ctx.translate(x, y);
+        ctx.fillStyle = '#ffccbc'; ctx.fillRect(-35, -20, 70, 45);
+        ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.moveTo(-45, -20); ctx.lineTo(0, -60); ctx.lineTo(45, -20); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#5d4037'; ctx.fillRect(-10, 5, 20, 20); ctx.fillRect(-28, -10, 14, 14); ctx.fillRect(14, -10, 14, 14);
+        ctx.restore();
+    }
+
+    function drawWindmill(x, y) {
+        ctx.save(); ctx.translate(x, y);
+        ctx.fillStyle = '#eceff1'; ctx.beginPath(); ctx.moveTo(-25, 80); ctx.lineTo(-12, -40); ctx.lineTo(12, -40); ctx.lineTo(25, 80); ctx.closePath(); ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = '#37474f'; ctx.stroke();
+        const angle = Date.now() * 0.0015;
+        ctx.translate(0, -35); ctx.rotate(angle); ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 4; i++) {
+            ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.rect(0, -6, 55, 12); ctx.fill(); ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    function drawStartArch(x, y) {
+        ctx.save(); ctx.translate(x, y);
+        ctx.fillStyle = '#1565c0'; ctx.fillRect(-70, -110, 20, 110); ctx.fillRect(50, -110, 20, 110);
+        ctx.fillStyle = '#0d47a1'; ctx.fillRect(-90, -140, 180, 40);
+        ctx.fillStyle = '#ffeb3b'; ctx.font = 'bold 22px "Microsoft JhengHei"'; ctx.textAlign = 'center';
+        ctx.fillText('🏁 巡遊起終點', 0, -113);
+        ctx.restore();
+    }
+
+    function updateAndRender() {
+        ctx.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+        drawBackground();
+
+        const activeBuses = buses.filter(b => !b.hidden).slice(0, maxBuses);
+        const speedStep = 0.00025 * busSpeed;
+
+        activeBuses.forEach((bus, index) => {
+            if (bus.dist === undefined) bus.dist = (index / Math.max(1, activeBuses.length));
+            bus.dist += speedStep * (bus.speedMul || 1.0);
+            if (bus.dist > 1.0) bus.dist -= 1.0;
+
+            const pos = getBezierPoint(bus.dist);
+            ctx.save();
+            ctx.translate(pos.x, pos.y);
+
+            const tilt = Math.sin(pos.angle) * 0.25;
+            ctx.rotate(tilt);
+
+            const movingLeft = Math.cos(pos.angle) < 0;
+            if (movingLeft) ctx.scale(-1, 1);
+
+            const isFocused = (bus.id === focusedBusId && focusTimer > 0);
+            if (isFocused) {
+                ctx.scale(1.4 * busSizeScale, 1.4 * busSizeScale);
+                ctx.beginPath(); ctx.arc(0, 0, 85, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 235, 59, 0.4)'; ctx.fill();
+                ctx.lineWidth = 4; ctx.strokeStyle = '#ff9800'; ctx.stroke();
+            } else {
+                ctx.scale(busSizeScale, busSizeScale);
+            }
+
+            drawSchoolBus(ctx, 160, 95, bus.color, bus.imgUrl);
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(pos.x, pos.y);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.beginPath(); ctx.roundRect(-70, -75, 140, 30, 15); ctx.fill();
+            ctx.lineWidth = 2; ctx.strokeStyle = '#ffeb3b'; ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 15px "Microsoft JhengHei"';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(bus.name || '黃色巴士', 0, -60);
+            ctx.restore();
+        });
+
+        if (focusTimer > 0) focusTimer--;
+        requestAnimationFrame(updateAndRender);
+    }
+
+    requestAnimationFrame(updateAndRender);
+
+    window.toggleFullScreen = function() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {});
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
+    }
+</script>
+</body>
+</html>
