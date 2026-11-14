@@ -8,12 +8,11 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #0b1329; font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
         
-        /* 16:9 劇場置中舞台容器 */
         #stage-container {
             position: absolute;
             top: 50%; left: 50%;
             width: 100vw;
-            height: 56.25vw; /* 16:9 aspect ratio */
+            height: 56.25vw;
             max-height: 100vh;
             max-width: 177.78vh;
             transform: translate(-50%, -50%);
@@ -27,7 +26,6 @@
 
         canvas { display: block; width: 100%; height: 100%; }
 
-        /* 頂部導覽列 / 狀態列 */
         .top-bar {
             position: absolute;
             top: 20px; left: 20px; right: 20px;
@@ -60,7 +58,6 @@
         }
         .nav-btn:hover { background: #ffeb3b; color: #000; transform: translateY(-2px); }
 
-        /* 全螢幕提示按鈕 */
         .fs-btn {
             position: absolute;
             bottom: 20px; right: 20px;
@@ -93,15 +90,13 @@
     const canvas = document.getElementById('trackCanvas');
     const ctx = canvas.getContext('2d');
 
-    // 固定 16:9 內部解析度 1920x1080
     const LOGICAL_WIDTH = 1920;
     const LOGICAL_HEIGHT = 1080;
     canvas.width = LOGICAL_WIDTH;
     canvas.height = LOGICAL_HEIGHT;
 
-    // 狀態同步與廣播
     const bc = new BroadcastChannel('bus_parade_channel');
-    let busSpeed = 1.0;
+    let busSpeed = 1.5; // 預設速度加快
     let maxBuses = 12;
     let busSizeScale = 1.0;
     let focusedBusId = null;
@@ -109,7 +104,6 @@
 
     let buses = [];
 
-    // 預設示範巴士資料（精準匹配黃色校車圖片外觀）
     function createDefaultBuses() {
         return [
             { id: 'demo_1', name: '陳小明的校車', dist: 0.0, speedMul: 1.0, color: '#fbc02d', imgUrl: null, hidden: false },
@@ -138,7 +132,6 @@
 
     loadBusesFromStorage();
 
-    // 接收控制台指令
     bc.onmessage = (event) => {
         const data = event.data;
         if (!data) return;
@@ -150,7 +143,7 @@
             buses = data.buses;
         } else if (data.type === 'FOCUS_BUS') {
             focusedBusId = data.busId;
-            focusTimer = 360; // 6秒特效
+            focusTimer = 360;
         } else if (data.type === 'ADD_BUS') {
             buses.push(data.bus);
             if (buses.length > maxBuses) buses.shift();
@@ -158,18 +151,16 @@
         }
     };
 
-    // 讀取設定
     const savedSettings = localStorage.getItem('bus_parade_settings');
     if (savedSettings) {
         try {
             const st = JSON.parse(savedSettings);
-            busSpeed = st.speed ?? 1.0;
+            busSpeed = st.speed ?? 1.5;
             maxBuses = st.maxBuses ?? 12;
             busSizeScale = st.busSize ?? 1.0;
         } catch(e) {}
     }
 
-    // 賽道中線貝茲曲線定義（平滑環繞 1920x1080 畫面）
     const trackPoints = [
         {x: 300, y: 850},
         {x: 960, y: 920},
@@ -181,9 +172,7 @@
         {x: 140, y: 600}
     ];
 
-    // 產生平滑賽道點對（Arc-length parameterized）
     function getBezierPoint(t) {
-        // 封閉式平滑曲線插值 (Catmull-Rom / B-Spline approach)
         const n = trackPoints.length;
         const scaledT = t * n;
         const i = Math.floor(scaledT) % n;
@@ -192,7 +181,6 @@
         const prevI = (i - 1 + n) % n;
         const localT = scaledT - i;
 
-        // Catmull-Rom spline
         const p0 = trackPoints[prevI];
         const p1 = trackPoints[i];
         const p2 = trackPoints[nextI];
@@ -204,7 +192,6 @@
         const x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * localT + (2*p0.x - 5*p1.x + 4*p2.x - p3.x) * tt + (-p0.x + 3*p1.x - 3*p2.x + p3.x) * ttt);
         const y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * localT + (2*p0.y - 5*p1.y + 4*p2.y - p3.y) * tt + (-p0.y + 3*p1.y - 3*p2.y + p3.y) * ttt);
 
-        // 切向量計算方向角
         const dt = 0.001;
         const nextPos = getRawPoint(t + dt > 1 ? t + dt - 1 : t + dt);
         const dx = nextPos.x - x;
@@ -229,11 +216,10 @@
         return {x, y};
     }
 
-    // 繪製精準的黃色校車向量圖形 (配合圖片結構)
     const busImageCache = {};
     function drawSchoolBus(ctx, width, height, customColor, imgUrl) {
         ctx.save();
-        ctx.scale(width / 220, height / 130); // 基準尺寸 220x130
+        ctx.scale(width / 220, height / 130);
 
         if (imgUrl) {
             if (!busImageCache[imgUrl]) {
@@ -249,38 +235,32 @@
             }
         }
 
-        // 車身主體顏色
         const bodyColor = customColor || '#fbc02d';
 
-        // 1. 車頂行李架 / 頂蓋
         ctx.fillStyle = '#546e7a';
         ctx.beginPath();
         ctx.roundRect(-50, -60, 130, 14, 4);
         ctx.fill();
 
-        // 2. 車身主體輪廓（符合經典校車弧形引擎蓋與車體）
         ctx.fillStyle = bodyColor;
         ctx.beginPath();
         ctx.moveTo(-90, 45);
         ctx.lineTo(-90, 20);
-        ctx.lineTo(-100, -5);    // 引擎蓋前緣
-        ctx.lineTo(-75, -45);    // 前擋風玻璃斜角
-        ctx.lineTo(80, -48);     // 車頂線
+        ctx.lineTo(-100, -5);
+        ctx.lineTo(-75, -45);
+        ctx.lineTo(80, -48);
         ctx.quadraticCurveTo(105, -48, 105, -20);
-        ctx.lineTo(105, 45);     // 車尾
+        ctx.lineTo(105, 45);
         ctx.closePath();
         ctx.fill();
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#37474f';
         ctx.stroke();
 
-        // 3. 側邊裝飾雙條紋 (經典校車棕色腰線)
         ctx.fillStyle = '#4e342e';
         ctx.fillRect(-90, 5, 200, 7);
         ctx.fillRect(-90, 20, 200, 6);
 
-        // 4. 車窗（4扇經典方窗與前擋風玻璃）
-        // 前擋風玻璃
         ctx.fillStyle = '#b3e5fc';
         ctx.beginPath();
         ctx.moveTo(-73, -40);
@@ -293,7 +273,6 @@
         ctx.strokeStyle = '#37474f';
         ctx.stroke();
 
-        // 4扇側窗
         const windowWidth = 24;
         const windowHeight = 26;
         const windowY = -38;
@@ -307,21 +286,16 @@
             ctx.strokeRect(wx, windowY, windowWidth, windowHeight);
         });
 
-        // 5. 前視鏡
         ctx.fillStyle = '#37474f';
         ctx.fillRect(-85, -30, 8, 18);
         ctx.fillRect(-89, -35, 12, 6);
 
-        // 6. 車底儲物箱/防撞桿
         ctx.fillStyle = '#90a4ae';
         ctx.fillRect(-25, 32, 50, 15);
-        ctx.fillRect(-102, 45, 207, 7); // 前後保險桿
-        ctx.fillRect(85, 22, 15, 6);   // 車尾標誌
+        ctx.fillRect(-102, 45, 207, 7);
+        ctx.fillRect(85, 22, 15, 6);
 
-        // 7. 輪胎 (前後大車輪連白色輪圈)
-        const wheels = [-55, 55];
-        wheels.forEach(wx => {
-            // 外框黑輪胎
+        [-55, 55].forEach(wx => {
             ctx.fillStyle = '#212121';
             ctx.beginPath();
             ctx.arc(wx, 50, 22, 0, Math.PI * 2);
@@ -330,7 +304,6 @@
             ctx.strokeStyle = '#424242';
             ctx.stroke();
 
-            // 白色內輪圈
             ctx.fillStyle = '#f5f5f5';
             ctx.beginPath();
             ctx.arc(wx, 50, 10, 0, Math.PI * 2);
@@ -343,9 +316,7 @@
         ctx.restore();
     }
 
-    // 背景風景繪製
     function drawBackground() {
-        // 天空漸層
         const skyGrad = ctx.createLinearGradient(0, 0, 0, LOGICAL_HEIGHT);
         skyGrad.addColorStop(0, '#4fc3f7');
         skyGrad.addColorStop(0.7, '#b3e5fc');
@@ -353,7 +324,6 @@
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 
-        // 遠山
         ctx.fillStyle = '#81c784';
         ctx.beginPath();
         ctx.moveTo(0, 750);
@@ -364,11 +334,9 @@
         ctx.lineTo(1920, 750);
         ctx.fill();
 
-        // 綠野草地
         ctx.fillStyle = '#aed581';
         ctx.fillRect(0, 700, LOGICAL_WIDTH, LOGICAL_HEIGHT - 700);
 
-        // 藍色大湖泊
         ctx.fillStyle = '#29b6f6';
         ctx.beginPath();
         ctx.ellipse(960, 600, 380, 140, 0, 0, Math.PI * 2);
@@ -377,11 +345,9 @@
         ctx.strokeStyle = '#0288d1';
         ctx.stroke();
 
-        // 小木屋與風車裝飾
         drawCottage(400, 520);
         drawWindmill(1480, 480);
 
-        // 賽道外邊界與草地跑道
         ctx.beginPath();
         for (let t = 0; t <= 1; t += 0.002) {
             const pt = getBezierPoint(t);
@@ -390,31 +356,27 @@
         }
         ctx.closePath();
         ctx.lineWidth = 140;
-        ctx.strokeStyle = '#795548'; // 賽道外框/泥土邊界
+        ctx.strokeStyle = '#795548';
         ctx.stroke();
 
         ctx.lineWidth = 120;
-        ctx.strokeStyle = '#e0e0e0'; // 灰色柏油路面
+        ctx.strokeStyle = '#e0e0e0';
         ctx.stroke();
 
-        // 賽道中心虛線
         ctx.lineWidth = 6;
         ctx.setLineDash([25, 25]);
         ctx.strokeStyle = '#ffffff';
         ctx.stroke();
-        ctx.setLineDash([]); // 重設虛線
+        ctx.setLineDash([]);
 
-        // 起點 / 終點拱門
         drawStartArch(300, 850);
     }
 
     function drawCottage(x, y) {
         ctx.save();
         ctx.translate(x, y);
-        // 屋身
         ctx.fillStyle = '#ffccbc';
         ctx.fillRect(-35, -20, 70, 45);
-        // 屋頂
         ctx.fillStyle = '#d32f2f';
         ctx.beginPath();
         ctx.moveTo(-45, -20);
@@ -422,7 +384,6 @@
         ctx.lineTo(45, -20);
         ctx.closePath();
         ctx.fill();
-        // 門窗
         ctx.fillStyle = '#5d4037';
         ctx.fillRect(-10, 5, 20, 20);
         ctx.fillRect(-28, -10, 14, 14);
@@ -433,7 +394,6 @@
     function drawWindmill(x, y) {
         ctx.save();
         ctx.translate(x, y);
-        // 塔身
         ctx.fillStyle = '#eceff1';
         ctx.beginPath();
         ctx.moveTo(-25, 80);
@@ -446,7 +406,6 @@
         ctx.strokeStyle = '#37474f';
         ctx.stroke();
 
-        // 風車葉片旋轉動畫
         const angle = Date.now() * 0.0015;
         ctx.translate(0, -35);
         ctx.rotate(angle);
@@ -464,11 +423,9 @@
     function drawStartArch(x, y) {
         ctx.save();
         ctx.translate(x, y);
-        // 拱門左右支柱
         ctx.fillStyle = '#1565c0';
         ctx.fillRect(-70, -110, 20, 110);
         ctx.fillRect(50, -110, 20, 110);
-        // 頂部橫額
         ctx.fillStyle = '#0d47a1';
         ctx.fillRect(-90, -140, 180, 40);
         ctx.fillStyle = '#ffeb3b';
@@ -478,16 +435,13 @@
         ctx.restore();
     }
 
-    // 主循環渲染
     function updateAndRender() {
         ctx.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 
-        // 1. 繪製背景與賽道
         drawBackground();
 
-        // 2. 更新與繪製車隊
         const activeBuses = buses.filter(b => !b.hidden).slice(0, maxBuses);
-        const speedStep = 0.00012 * busSpeed;
+        const speedStep = 0.00025 * busSpeed; // 基礎速度系數調高
 
         activeBuses.forEach((bus, index) => {
             if (bus.dist === undefined) {
@@ -501,11 +455,15 @@
             ctx.translate(pos.x, pos.y);
             ctx.rotate(pos.angle);
 
-            // 檢查是否為聚焦車輛
+            // 【車輛方向矯正】當行駛方向朝左時，自動進行上下翻轉，防止車身顛倒
+            const cosAngle = Math.cos(pos.angle);
+            if (cosAngle < 0) {
+                ctx.scale(1, -1);
+            }
+
             const isFocused = (bus.id === focusedBusId && focusTimer > 0);
             if (isFocused) {
                 ctx.scale(1.4 * busSizeScale, 1.4 * busSizeScale);
-                // 閃耀光環特效
                 ctx.beginPath();
                 ctx.arc(0, 0, 85, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 235, 59, 0.4)';
@@ -517,11 +475,12 @@
                 ctx.scale(busSizeScale, busSizeScale);
             }
 
-            // 繪製黃色校車
             drawSchoolBus(ctx, 160, 95, bus.color, bus.imgUrl);
 
-            // 姓名標籤（保持水平不旋轉）
-            ctx.rotate(-pos.angle);
+            ctx.restore(); // 恢復坐標系以繪製水平姓名標籤
+            ctx.save();
+            ctx.translate(pos.x, pos.y);
+
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.beginPath();
             ctx.roundRect(-70, -75, 140, 30, 15);
