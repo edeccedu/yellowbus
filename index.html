@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>黃色小車大巡遊 — 現場互動大銀幕賽道</title>
+    <title>黃色巴士大巡遊 — 現場互動大銀幕與後台控制系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -73,77 +73,45 @@
     <header id="topHeader" class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 z-40 sticky top-0">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-300 via-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-display text-xl">
-                🚗
+                🚌
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="font-display text-lg sm:text-xl tracking-wide text-yellow-400 leading-none">黃色小車大巡遊</h1>
+                    <h1 class="font-display text-lg sm:text-xl tracking-wide text-yellow-400 leading-none">黃色巴士大巡遊</h1>
                     <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> 即時同步 • 16:9
                     </span>
                 </div>
-                <p class="text-xs text-slate-400 hidden sm:block mt-0.5">填上顏色 • 拍照上傳 • 登上大銀幕賽道</p>
+                <p class="text-xs text-slate-400 hidden sm:block mt-0.5">塗上黃色 • 拍照上傳 • 登上大銀幕賽道</p>
             </div>
         </div>
 
-        <!-- 主要雙模式切換按鈕 -->
+        <!-- 主要三模式切換按鈕：大銀幕 / 觀眾站 / 獨立後台 -->
         <div class="flex items-center bg-slate-800 p-1 rounded-2xl border border-slate-700 shadow-inner">
-            <button id="btnModeScreen" onclick="switchMode('screen')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-yellow-400 text-slate-950 shadow">
+            <button id="btnModeScreen" onclick="switchMode('screen')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-yellow-400 text-slate-950 shadow">
                 <span>🖥️</span> 大銀幕巡遊
             </button>
-            <button id="btnModeStation" onclick="switchMode('station')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white">
+            <button id="btnModeStation" onclick="switchMode('station')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white">
                 <span>🎨</span> 拍照上傳 / 手繪
+            </button>
+            <button id="btnModeBackstage" onclick="switchMode('backstage')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white">
+                <span>🎛️</span> 後台控制台
             </button>
         </div>
 
         <!-- 右側主辦方快捷功能 -->
         <div class="flex items-center gap-2">
             <button onclick="openTemplateModal()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition" title="列印 A4 填色紙">
-                <span>🖨️</span> <span class="hidden md:inline">列印 A4 填色紙</span>
+                <span>🖨️</span> <span class="hidden lg:inline">列印 A4 填色紙</span>
             </button>
-            <button id="btnToggleControls" onclick="toggleOrganizerDrawer()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition" title="控制台設定">
-                <span>⚙️</span> <span class="hidden md:inline">控制台</span>
+            <button onclick="openBackstageWindow()" class="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-xs font-bold flex items-center gap-1.5 transition" title="在新分頁開啟獨立後台控制視窗">
+                <span>↗</span> <span class="hidden md:inline">獨立後台視窗</span>
             </button>
             <button onclick="toggleProjectorMode()" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition" title="切換 16:9 投影機全螢幕模式（按鍵 F）">
-                <span>⛶</span> <span class="hidden sm:inline">投影機全螢幕模式</span>
+                <span>⛶</span> <span class="hidden sm:inline">投影機全螢幕</span>
             </button>
         </div>
     </header>
-
-    <!-- 可收合主辦方控制台 -->
-    <div id="organizerDrawer" class="hidden bg-slate-800/95 backdrop-blur border-b border-slate-700 text-white px-4 py-3 z-30 shadow-xl">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-4 sm:gap-6">
-                <!-- 巡遊車速控制 -->
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-bold text-slate-300">巡遊車速：</label>
-                    <input id="ctrlSpeed" type="range" min="0.2" max="2.5" step="0.1" value="1.0" class="w-24 accent-yellow-400 cursor-pointer">
-                    <span id="valSpeed" class="text-xs font-mono text-yellow-400 w-9">1.0x</span>
-                </div>
-                <!-- 小車尺寸控制 -->
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-bold text-slate-300">小車尺寸：</label>
-                    <input id="ctrlScale" type="range" min="0.6" max="1.6" step="0.1" value="1.0" class="w-24 accent-yellow-400 cursor-pointer">
-                    <span id="valScale" class="text-xs font-mono text-yellow-400 w-9">1.0x</span>
-                </div>
-                <!-- 顯示車主名牌 -->
-                <label class="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
-                    <input id="ctrlLabels" type="checkbox" checked class="rounded accent-yellow-400 w-4 h-4">
-                    顯示車主名牌
-                </label>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <span class="text-xs text-slate-400 mr-1">賽道車輛：<strong id="carCountBadge" class="text-yellow-400">0</strong> 輛</span>
-                <button onclick="spawnDemoFleet(5)" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition">
-                    + 加入 5 輛示範小車
-                </button>
-                <button onclick="clearAllCars()" class="px-3 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold transition">
-                    清空賽道
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- ===================================================================== -->
     <!-- 畫面一：嚴格 16:9 寬螢幕風景彎曲賽道大銀幕                              -->
@@ -156,7 +124,7 @@
 
             <!-- 16:9 比例標示浮水印（非投影模式右上角） -->
             <div id="aspectBadge" class="pointer-events-none absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-slate-900/60 backdrop-blur text-white/80 text-[11px] font-bold border border-white/15">
-                16:9 寬螢幕舞台
+                16:9 寬螢幕舞台 • 場上 <span id="hudActiveCount">0</span> 輛
             </div>
 
             <!-- 退出投影機全螢幕按鈕（僅在投影模式顯示） -->
@@ -165,7 +133,7 @@
             </button>
 
             <!-- 左下角觀眾參與提示卡 -->
-            <div id="joinBanner" class="absolute bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3.5 shadow-2xl border-2 border-yellow-400 flex items-center gap-3 max-w-[270px] sm:max-w-sm transition-transform hover:scale-[1.02]">
+            <div id="joinBanner" class="absolute bottom-3 left-3 sm:bottom-5 sm:left-5 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3.5 shadow-2xl border-2 border-yellow-400 flex items-center gap-3 max-w-[275px] sm:max-w-sm transition-transform hover:scale-[1.02]">
                 <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-slate-900 p-1.5 flex-shrink-0 flex items-center justify-center">
                     <svg viewBox="0 0 36 36" class="w-full h-full fill-yellow-400">
                         <path d="M2 2h10v10H2V2zm2 2v6h6V4H4zm2 2h2v2H6V6zm18-4h10v10H24V2zm2 2v6h6V4h-6zm2 2h2v2h-2V6zM2 24h10v10H2V24zm2 2v6h6v-6H4zm2 2h2v2H6v-2zm10-24h4v4h-4V4zm0 8h4v6h-4v-6zm6 2h4v4h-4v-4zm6 4h6v4h-6v-4zM14 20h6v4h-6v-4zm8 4h4v10h-4V24zm6 4h6v6h-6v-6zm-14 2h6v4h-6v-4z"/>
@@ -175,7 +143,7 @@
                     <div class="inline-block px-2 py-0.5 rounded-md bg-yellow-400 text-slate-950 font-display text-[10px] tracking-wider mb-0.5">
                         歡迎加入大巡遊！
                     </div>
-                    <p class="font-display text-slate-900 text-sm sm:text-base leading-tight">為你的黃色小車上色</p>
+                    <p class="font-display text-slate-900 text-sm sm:text-base leading-tight">為你的黃色巴士上色</p>
                     <p class="text-[11px] text-slate-600 leading-snug mt-0.5">填色紙拍照上傳，或直接用手機即時手繪！</p>
                     <button onclick="switchMode('station')" class="mt-1 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800">
                         前往拍照上傳 / 手繪站 →
@@ -188,19 +156,19 @@
                 <div class="bg-slate-900/90 backdrop-blur-md text-white px-5 py-2.5 rounded-full border-2 border-yellow-400 shadow-2xl flex items-center gap-3">
                     <span class="text-2xl animate-bounce">🎉</span>
                     <div>
-                        <p class="text-[11px] text-yellow-300 font-bold tracking-wider">新車閃亮登場！</p>
-                        <p id="arrivalToastText" class="font-display text-sm sm:text-base text-white">陳小明的黃色跑車</p>
+                        <p class="text-[11px] text-yellow-300 font-bold tracking-wider">新巴士閃亮登場！</p>
+                        <p id="arrivalToastText" class="font-display text-sm sm:text-base text-white">陳小明的黃色巴士</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 右下角快捷按鈕 -->
-            <div class="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 flex flex-col sm:flex-row gap-2">
-                <button onclick="spawnDemoFleet(3)" class="px-3.5 py-2 rounded-2xl bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur border border-white/15 text-xs sm:text-sm font-bold shadow-xl transition flex items-center gap-1.5">
-                    <span>✨</span> + 示範小車
+            <!-- 右下角快捷按鈕（投影機全螢幕時自動隱藏以保持大銀幕純淨） -->
+            <div id="screenQuickActions" class="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 flex flex-col sm:flex-row gap-2">
+                <button onclick="switchMode('backstage')" class="px-3.5 py-2 rounded-2xl bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur border border-white/15 text-xs sm:text-sm font-bold shadow-xl transition flex items-center gap-1.5">
+                    <span>🎛️</span> 後台控制台
                 </button>
                 <button onclick="switchMode('station')" class="px-4 py-2 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-display text-xs sm:text-sm shadow-xl shadow-yellow-500/20 transition flex items-center gap-1.5">
-                    <span>📸</span> 上傳我的小車
+                    <span>📸</span> 上傳我的巴士
                 </button>
             </div>
         </div>
@@ -216,8 +184,8 @@
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-400/30 border border-yellow-500/40 text-amber-900 text-xs font-bold mb-2">
                     🎨 觀眾創作工作站
                 </span>
-                <h2 class="font-display text-2xl sm:text-3xl text-slate-900">讓你的黃色小車駛上大銀幕！</h2>
-                <p class="text-sm text-slate-600 mt-1">拍攝你填好顏色的紙本小車，或直接在螢幕上即時手繪創作。</p>
+                <h2 class="font-display text-2xl sm:text-3xl text-slate-900">讓你的黃色巴士駛上大銀幕！</h2>
+                <p class="text-sm text-slate-600 mt-1">拍攝你填好顏色的紙本巴士，或直接在螢幕上即時手繪創作。</p>
             </div>
 
             <!-- 工作站分頁切換：拍照上傳 vs 即時手繪 -->
@@ -226,7 +194,7 @@
                     <span>📸</span> 拍照上傳（智能去背）
                 </button>
                 <button id="tabDigitalPaint" onclick="switchStationTab('paint')" class="py-3 px-4 rounded-xl font-display text-sm sm:text-base flex items-center justify-center gap-2 transition text-slate-600 hover:bg-slate-50">
-                    <span>🖌️</span> 即時手繪小車
+                    <span>🖌️</span> 即時手繪巴士 / 小車
                 </button>
             </div>
 
@@ -234,7 +202,6 @@
             <!-- 分頁 A：拍照上傳與白紙自動去背剪裁工具                          -->
             <!-- =============================================================== -->
             <div id="panelPhotoCutout" class="bg-white rounded-3xl shadow-xl border border-slate-200/80 p-5 sm:p-6">
-                <!-- 步驟一：開啟相機或選擇相片 -->
                 <div id="uploadDropzone" class="border-2 border-dashed border-amber-400 bg-amber-50/50 hover:bg-amber-50 rounded-2xl p-6 sm:p-8 text-center transition cursor-pointer relative">
                     <input id="carFileInput" type="file" accept="image/*" capture="environment" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                     <div class="w-16 h-16 rounded-2xl bg-yellow-400 text-slate-950 flex items-center justify-center text-3xl mx-auto mb-3 shadow-md">
@@ -242,17 +209,16 @@
                     </div>
                     <h3 class="font-display text-lg text-slate-900">點擊開啟相機拍照或選擇相片</h3>
                     <p class="text-xs sm:text-sm text-slate-600 max-w-md mx-auto mt-1">
-                        請拍下你在白紙上畫好的黃色小車，系統會自動去除白色紙張背景，只保留你的小車！
+                        請拍下你在白紙上畫好的黃色巴士或小車，系統會自動去除白色紙張背景！
                     </p>
                     <div class="mt-4 inline-flex flex-wrap items-center justify-center gap-2">
                         <span class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow">開啟相機 / 相簿</span>
                         <button type="button" onclick="event.stopPropagation(); loadSamplePaperPhoto();" class="relative z-20 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold transition">
-                            試用範例相片
+                            試用範例巴士相片
                         </button>
                     </div>
                 </div>
 
-                <!-- 步驟二：互動式去背強度與方向調整 -->
                 <div id="cutoutEditorArea" class="hidden mt-4">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <h4 class="font-display text-base text-slate-800 flex items-center gap-2">
@@ -264,7 +230,6 @@
                         </label>
                     </div>
 
-                    <!-- 棋盤格去背預覽區 -->
                     <div class="checkerboard rounded-2xl border-2 border-slate-200 overflow-hidden relative flex items-center justify-center h-64 sm:h-72 shadow-inner">
                         <canvas id="cutoutCanvas" class="max-w-full max-h-full object-contain"></canvas>
                         <div class="absolute bottom-2 right-2 bg-slate-900/75 text-white text-[11px] px-2.5 py-1 rounded-full backdrop-blur">
@@ -272,7 +237,6 @@
                         </div>
                     </div>
 
-                    <!-- 去背與旋轉微調控制項 -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
                         <div>
                             <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
@@ -280,7 +244,7 @@
                                 <span id="lblThreshold" class="font-mono text-amber-600">42%</span>
                             </div>
                             <input id="cutoutThreshold" type="range" min="0" max="100" value="42" oninput="processPhotoCutout()" class="w-full accent-yellow-500 cursor-pointer">
-                            <p class="text-[11px] text-slate-500 mt-1">向右滑動可消除更多小車周圍的白色或淺灰色紙張陰影。</p>
+                            <p class="text-[11px] text-slate-500 mt-1">向右滑動可消除更多周圍的白色或淺灰色紙張陰影。</p>
                         </div>
 
                         <div class="flex flex-col justify-between gap-2">
@@ -302,16 +266,20 @@
             </div>
 
             <!-- =============================================================== -->
-            <!-- 分頁 B：即時手繪黃色小車工作室                                  -->
+            <!-- 分頁 B：即時手繪黃色巴士 / 小車工作室                           -->
             <!-- =============================================================== -->
             <div id="panelDigitalPaint" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200/80 p-5 sm:p-6">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <div>
-                        <h3 class="font-display text-lg text-slate-900">設計你的專屬黃色小車</h3>
-                        <p class="text-xs text-slate-500">用手指或滑鼠在車身上畫出賽車條紋、星星、愛心或可愛圖案！</p>
+                        <h3 class="font-display text-lg text-slate-900">設計你的專屬黃色車輛</h3>
+                        <p class="text-xs text-slate-500">可切換「黃色巴士」或「黃色小車」車型，並自由彩繪花紋！</p>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" onclick="undoPaint()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">↩ 復原一步</button>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <div class="inline-flex bg-slate-100 p-1 rounded-xl border border-slate-200 mr-1">
+                            <button type="button" id="btnShapeBus" onclick="setPaintVehicleType('bus')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-yellow-400 text-slate-950 shadow-sm">🚌 黃色巴士</button>
+                            <button type="button" id="btnShapeCar" onclick="setPaintVehicleType('car')" class="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900">🚗 黃色小車</button>
+                        </div>
+                        <button type="button" onclick="undoPaint()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">↩ 復原</button>
                         <button type="button" onclick="resetPaintCanvas()" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition">🗑️ 重畫</button>
                     </div>
                 </div>
@@ -347,9 +315,9 @@
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
                     <div class="sm:col-span-7">
                         <label for="driverNameInput" class="block text-xs font-bold tracking-wider text-yellow-400 mb-1.5">
-                            車主姓名或祝福語（將顯示於大銀幕小車上方）
+                            乘客／車主姓名或祝福語（將顯示於大銀幕巴士上方）
                         </label>
-                        <input id="driverNameInput" type="text" maxlength="20" placeholder="例如：陳小明 • 黃色小車加油！" class="w-full px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700 text-white placeholder-slate-400 font-bold text-sm focus:outline-none focus:border-yellow-400 transition">
+                        <input id="driverNameInput" type="text" maxlength="20" placeholder="例如：陳小明 • 黃色巴士出發！" class="w-full px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700 text-white placeholder-slate-400 font-bold text-sm focus:outline-none focus:border-yellow-400 transition">
                     </div>
                     <div class="sm:col-span-5">
                         <button id="btnLaunchCar" onclick="launchCarToTrack()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 hover:from-yellow-300 hover:to-orange-300 text-slate-950 font-display text-base sm:text-lg shadow-lg shadow-amber-500/25 transform active:scale-95 transition flex items-center justify-center gap-2">
@@ -362,26 +330,229 @@
     </section>
 
     <!-- ===================================================================== -->
-    <!-- 可列印 A4 填色紙彈出視窗                                              -->
+    <!-- 畫面三：專屬後台控制台頁面 (Backstage Control Page)                   -->
+    <!-- 可透過 ?mode=backstage 獨立視窗開啟，與 16:9 大銀幕即時雙向同步        -->
+    <!-- ===================================================================== -->
+    <section id="viewBackstage" class="hidden flex-1 bg-slate-950 text-slate-100 py-6 px-4 overflow-y-auto">
+        <div class="max-w-6xl mx-auto space-y-6">
+            <!-- 後台頂部狀態與雙螢幕連接提示 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xl">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2.5 mb-1">
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400 text-slate-950">後台控制台 BACKSTAGE</span>
+                        <span class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            即時同步連線中（所有設定立即反映至大銀幕）
+                        </span>
+                    </div>
+                    <h2 class="font-display text-2xl text-white">黃色巴士大巡遊 — 現場舞台控制中心</h2>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                        建議將「大銀幕巡遊」拖曳至投影機螢幕全螢幕播放，並在此後台頁面即時調整車速、數量、尺寸與聚焦特寫。
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button onclick="openScreenWindow()" class="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold shadow-lg transition flex items-center gap-2">
+                        <span>🖥️</span> 另開 16:9 大銀幕視窗
+                    </button>
+                    <button onclick="copyBackstageUrl()" class="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-bold transition flex items-center gap-2">
+                        <span>🔗</span> 複製後台網址
+                    </button>
+                </div>
+            </div>
+
+            <!-- 核心三大參數控制卡片：速度、數量、尺寸 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- 1. 巴士行駛速度控制 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col justify-between shadow-lg">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">⚡</span>
+                                <div>
+                                    <h3 class="font-display text-base text-white">巴士行駛速度</h3>
+                                    <p class="text-[11px] text-slate-400">控制全場巴士巡遊移動快慢</p>
+                                </div>
+                            </div>
+                            <span id="bsValSpeed" class="font-mono text-xl font-black text-yellow-400">1.0x</span>
+                        </div>
+
+                        <input id="bsCtrlSpeed" type="range" min="0" max="3.0" step="0.1" value="1.0" oninput="updateSpeedFromBackstage(this.value)" class="w-full h-2.5 bg-slate-800 rounded-lg accent-yellow-400 cursor-pointer my-2">
+                        <div class="flex justify-between text-[11px] text-slate-500 font-mono">
+                            <span>0x 暫停</span>
+                            <span>1.0x 正常</span>
+                            <span>3.0x 極速</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-5 gap-1.5 mt-4 pt-4 border-t border-slate-800">
+                        <button onclick="updateSpeedFromBackstage(0)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-rose-300 transition">暫停</button>
+                        <button onclick="updateSpeedFromBackstage(0.5)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">0.5x</button>
+                        <button onclick="updateSpeedFromBackstage(1.0)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-yellow-300 transition">1.0x</button>
+                        <button onclick="updateSpeedFromBackstage(1.8)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">1.8x</button>
+                        <button onclick="updateSpeedFromBackstage(2.5)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-300 transition">2.5x</button>
+                    </div>
+                </div>
+
+                <!-- 2. 場上巴士數量控制 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col justify-between shadow-lg">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">🚌</span>
+                                <div>
+                                    <h3 class="font-display text-base text-white">同場巴士數量上限</h3>
+                                    <p class="text-[11px] text-slate-400">設定賽道同時行駛的最多巴士數</p>
+                                </div>
+                            </div>
+                            <span class="font-mono text-xl font-black text-emerald-400"><span id="bsValMaxCars">20</span> <span class="text-xs font-normal text-slate-400">輛</span></span>
+                        </div>
+
+                        <input id="bsCtrlMaxCars" type="range" min="1" max="30" step="1" value="20" oninput="updateMaxCarsFromBackstage(this.value)" class="w-full h-2.5 bg-slate-800 rounded-lg accent-emerald-400 cursor-pointer my-2">
+                        <div class="flex justify-between text-[11px] text-slate-500 font-mono">
+                            <span>1 輛</span>
+                            <span>15 輛</span>
+                            <span>30 輛</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-1.5 mt-4 pt-4 border-t border-slate-800">
+                        <button onclick="updateMaxCarsFromBackstage(3)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">3 輛</button>
+                        <button onclick="updateMaxCarsFromBackstage(8)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">8 輛</button>
+                        <button onclick="updateMaxCarsFromBackstage(15)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-300 transition">15 輛</button>
+                        <button onclick="updateMaxCarsFromBackstage(30)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">30 輛</button>
+                    </div>
+                </div>
+
+                <!-- 3. 巴士尺寸大小控制 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col justify-between shadow-lg">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg">🔍</span>
+                                <div>
+                                    <h3 class="font-display text-base text-white">巴士尺寸大小</h3>
+                                    <p class="text-[11px] text-slate-400">即時縮放大銀幕上所有巴士比例</p>
+                                </div>
+                            </div>
+                            <span id="bsValScale" class="font-mono text-xl font-black text-sky-400">1.0x</span>
+                        </div>
+
+                        <input id="bsCtrlScale" type="range" min="0.5" max="1.8" step="0.1" value="1.0" oninput="updateScaleFromBackstage(this.value)" class="w-full h-2.5 bg-slate-800 rounded-lg accent-sky-400 cursor-pointer my-2">
+                        <div class="flex justify-between text-[11px] text-slate-500 font-mono">
+                            <span>0.5x 迷你</span>
+                            <span>1.0x 標準</span>
+                            <span>1.8x 特大</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-1.5 mt-4 pt-4 border-t border-slate-800">
+                        <button onclick="updateScaleFromBackstage(0.7)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">迷你 0.7x</button>
+                        <button onclick="updateScaleFromBackstage(1.0)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-sky-300 transition">標準 1.0x</button>
+                        <button onclick="updateScaleFromBackstage(1.3)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition">放大 1.3x</button>
+                        <button onclick="updateScaleFromBackstage(1.6)" class="py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-300 transition">特大 1.6x</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 舞台顯示選項與批量操作列 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+                <div class="flex flex-wrap items-center gap-5">
+                    <label class="flex items-center gap-2.5 text-sm font-bold text-slate-200 cursor-pointer">
+                        <input id="bsCtrlLabels" type="checkbox" checked onchange="updateLabelsFromBackstage(this.checked)" class="w-4 h-4 rounded accent-yellow-400">
+                        顯示車主名牌標籤
+                    </label>
+                    <label class="flex items-center gap-2.5 text-sm font-bold text-slate-200 cursor-pointer">
+                        <input id="bsCtrlJoinBanner" type="checkbox" checked onchange="updateJoinBannerFromBackstage(this.checked)" class="w-4 h-4 rounded accent-yellow-400">
+                        大銀幕左下角顯示掃碼提示卡
+                    </label>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="spawnDemoFleet(1)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition">
+                        + 1 輛示範巴士
+                    </button>
+                    <button onclick="spawnDemoFleet(5)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition">
+                        + 5 輛示範巴士
+                    </button>
+                    <button onclick="evenOutSpacing()" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow transition" title="讓所有巴士在賽道上均勻分散排列">
+                        📐 自動均勻車距
+                    </button>
+                    <button onclick="clearAllCars()" class="px-3.5 py-2 rounded-xl bg-rose-600/85 hover:bg-rose-600 text-white text-xs font-bold transition">
+                        🗑️ 清空全部巴士
+                    </button>
+                </div>
+            </div>
+
+            <!-- 場上巴士即時管理清單 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-lg">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <div>
+                        <h3 class="font-display text-lg text-white">場上巴士清單管理</h3>
+                        <p class="text-xs text-slate-400">
+                            目前總庫存：<strong id="bsTotalCount" class="text-white">0</strong> 輛 • 
+                            正在大銀幕行駛：<strong id="bsActiveCount" class="text-emerald-400">0</strong> 輛（受同場數量上限控制）
+                        </p>
+                    </div>
+                </div>
+
+                <div id="backstageFleetGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    <!-- 由 JS 動態渲染每輛巴士的管理卡片 -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 可列印 A4 填色紙彈出視窗（含黃色巴士與黃色小車雙範本）                -->
     <!-- ===================================================================== -->
     <div id="templateModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h3 class="font-display text-xl text-slate-900">現場活動專用 A4 填色紙</h3>
-                    <p class="text-xs text-slate-500">建議使用 A4 白色影印紙列印，讓現場觀眾用黃色及各色水彩筆填色。</p>
+                    <p class="text-xs text-slate-500">可切換「黃色巴士」或「黃色小車」填色紙列印，讓觀眾塗色後拍照上傳。</p>
                 </div>
-                <button onclick="closeTemplateModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-600">✕</button>
+                <div class="flex items-center gap-2">
+                    <div class="inline-flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                        <button type="button" id="btnTplBus" onclick="switchPrintableTemplate('bus')" class="px-3 py-1 rounded-lg text-xs font-bold bg-yellow-400 text-slate-950 shadow-sm">🚌 黃色巴士</button>
+                        <button type="button" id="btnTplCar" onclick="switchPrintableTemplate('car')" class="px-3 py-1 rounded-lg text-xs font-bold text-slate-600">🚗 黃色小車</button>
+                    </div>
+                    <button onclick="closeTemplateModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-600">✕</button>
+                </div>
             </div>
 
             <!-- 可列印紙張預覽區 -->
             <div id="printableSheet" class="border-2 border-slate-300 rounded-2xl p-6 bg-white text-center">
                 <div class="border-4 border-dashed border-slate-400 rounded-2xl p-6">
-                    <h2 class="font-display text-2xl text-slate-900 tracking-wide">黃色小車填色紙 — 塗上顏色後拍照上傳到大銀幕！</h2>
-                    <p class="text-xs text-slate-600 mt-1.5">步驟 1：為小車塗上亮麗的黃色與創意花紋 • 步驟 2：用手機拍下整張小車並上傳到大銀幕一起巡遊！</p>
+                    <h2 id="tplHeading" class="font-display text-2xl text-slate-900 tracking-wide">黃色巴士填色紙 — 塗上顏色後拍照上傳到大銀幕！</h2>
+                    <p class="text-xs text-slate-600 mt-1.5">步驟 1：為車輛塗上亮麗的黃色與創意花紋 • 步驟 2：用手機拍下整張車輛並上傳到大銀幕一起巡遊！</p>
                     
-                    <!-- 高對比粗黑線條 SVG 汽車輪廓（專為手機拍照智能去背優化） -->
-                    <div class="my-6 flex justify-center">
+                    <!-- 黃色巴士 SVG 輪廓 -->
+                    <div id="tplSvgBus" class="my-6 flex justify-center">
+                        <svg viewBox="0 0 540 260" class="w-full max-w-lg h-auto">
+                            <path d="M 45 182 L 45 65 C 45 45 60 32 82 32 L 448 32 C 474 32 490 48 494 74 L 502 130 C 505 150 502 182 482 182 L 442 182" fill="#ffffff" stroke="#0f172a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="175" y1="182" x2="355" y2="182" stroke="#0f172a" stroke-width="8" stroke-linecap="round"/>
+                            <line x1="45" y1="122" x2="500" y2="122" stroke="#0f172a" stroke-width="5"/>
+                            <!-- 巴士車窗 -->
+                            <rect x="68" y="52" width="66" height="54" rx="10" fill="#ffffff" stroke="#0f172a" stroke-width="6"/>
+                            <rect x="148" y="52" width="66" height="54" rx="10" fill="#ffffff" stroke="#0f172a" stroke-width="6"/>
+                            <rect x="228" y="52" width="66" height="54" rx="10" fill="#ffffff" stroke="#0f172a" stroke-width="6"/>
+                            <rect x="308" y="52" width="66" height="54" rx="10" fill="#ffffff" stroke="#0f172a" stroke-width="6"/>
+                            <path d="M 390 52 L 455 52 C 468 52 476 60 479 74 L 484 106 L 390 106 Z" fill="#ffffff" stroke="#0f172a" stroke-width="6" stroke-linejoin="round"/>
+                            <!-- 車頭燈與車輪 -->
+                            <rect x="484" y="136" width="16" height="22" rx="5" fill="#ffffff" stroke="#0f172a" stroke-width="5"/>
+                            <circle cx="130" cy="184" r="42" fill="#ffffff" stroke="#0f172a" stroke-width="8"/>
+                            <circle cx="130" cy="184" r="20" fill="#ffffff" stroke="#0f172a" stroke-width="5"/>
+                            <circle cx="130" cy="184" r="6" fill="#0f172a"/>
+                            <circle cx="400" cy="184" r="42" fill="#ffffff" stroke="#0f172a" stroke-width="8"/>
+                            <circle cx="400" cy="184" r="20" fill="#ffffff" stroke="#0f172a" stroke-width="5"/>
+                            <circle cx="400" cy="184" r="6" fill="#0f172a"/>
+                        </svg>
+                    </div>
+
+                    <!-- 黃色小車 SVG 輪廓 -->
+                    <div id="tplSvgCar" class="hidden my-6 flex justify-center">
                         <svg viewBox="0 0 500 260" class="w-full max-w-md h-auto">
                             <path d="M 65 175 L 55 175 C 42 175 35 165 38 150 L 48 122 C 53 108 66 102 85 100 L 145 94 L 190 48 C 204 35 222 30 245 30 L 325 30 C 350 30 370 40 385 60 L 415 98 L 448 106 C 464 110 472 122 472 138 L 472 162 C 472 172 465 175 452 175 L 425 175" fill="#ffffff" stroke="#0f172a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
                             <line x1="175" y1="175" x2="325" y2="175" stroke="#0f172a" stroke-width="8" stroke-linecap="round"/>
@@ -402,7 +573,7 @@
 
                     <div class="flex items-center justify-between text-left border-t border-slate-300 pt-3 text-xs text-slate-700 font-bold">
                         <span>創作者姓名：___________________________</span>
-                        <span>小車名稱：___________________________</span>
+                        <span>巴士／小車名稱：___________________________</span>
                     </div>
                 </div>
             </div>
@@ -419,37 +590,40 @@
     <!-- 底部非阻斷式系統提示橫幅 -->
     <div id="feedbackBanner" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-yellow-400/60 text-sm font-bold flex items-center gap-2.5">
         <span id="feedbackIcon">✅</span>
-        <span id="feedbackText">已成功將小車加入大銀幕賽道！</span>
+        <span id="feedbackText">已成功將巴士加入大銀幕賽道！</span>
     </div>
 
     <script>
         /**
          * =========================================================================
-         * 黃色小車大巡遊 — 核心系統架構（嚴格 16:9 寬螢幕舞台 + 繁體中文版）
+         * 黃色巴士大巡遊 — 核心系統架構（嚴格 16:9 寬螢幕舞台 + 專屬後台控制台）
          * 1. 1920x1080 虛擬座標空間 + 高 DPI 清晰渲染 + CSS 16:9 比例舞台框
-         * 2. 跨分頁即時同步（BroadcastChannel + LocalStorage）
+         * 2. 專屬後台控制台 (?mode=backstage) 即時同步速度、數量上限、尺寸與單車聚焦
          * 3. 弧長參數化封閉 Catmull-Rom 彎曲賽道引擎（確保過彎等速流暢）
-         * 4. 紙本相片智能去背裁切引擎 + 觸控/滑鼠即時手繪工作室
+         * 4. 紙本相片智能去背裁切引擎 + 觸控/滑鼠即時手繪（支援黃色巴士與小車）
          * =========================================================================
          */
 
         const STAGE_W = 1920;
         const STAGE_H = 1080;
-        const STORAGE_KEY = 'yellow_car_parade_fleet_zh_hk_v1';
-        const CHANNEL_NAME = 'yellow_car_parade_sync_zh_hk';
+        const STORAGE_KEY = 'yellow_bus_parade_fleet_zh_hk_v2';
+        const SETTINGS_KEY = 'yellow_bus_parade_settings_zh_hk_v2';
+        const CHANNEL_NAME = 'yellow_bus_parade_sync_zh_hk_v2';
         const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel(CHANNEL_NAME) : null;
 
         // 全域應用程式狀態
         const state = {
-            mode: 'screen',          // 'screen' | 'station'
+            mode: 'screen',          // 'screen' | 'station' | 'backstage'
             stationTab: 'photo',     // 'photo' | 'paint'
             projectorMode: false,
             speedMultiplier: 1.0,
             carScale: 1.0,
+            maxVisibleCars: 20,
             showLabels: true,
-            cars: [],                // 賽道上行駛中的車輛陣列
+            showJoinBanner: true,
+            cars: [],                // 賽道上所有車輛陣列
             sparkles: [],            // 新車登場慶祝粒子
-            exhaustPuffs: [],        // 小車排氣管可愛白煙粒子
+            exhaustPuffs: [],        // 排氣管可愛白煙粒子
             clouds: [],              // 天空飄浮雲朵
             roadLut: [],             // 均勻弧長採樣查找表
             totalRoadLength: 0,
@@ -467,6 +641,7 @@
         // 即時手繪工作室狀態
         const paintState = {
             isDrawing: false,
+            vehicleType: 'bus',      // 'bus' | 'car'
             color: '#ef4444',
             brushSize: 14,
             isEraser: false,
@@ -474,18 +649,18 @@
         };
 
         // =========================================================================
-        // 1. 初始化與事件綁定
+        // 1. 初始化與 URL 路由解析 (?mode=backstage / ?mode=station / ?mode=screen)
         // =========================================================================
         window.addEventListener('DOMContentLoaded', () => {
             initPaintStudio();
             initCutoutListeners();
-            initControlListeners();
             initAmbientClouds();
 
-            // 載入已儲存車輛，若無則自動生成預設示範車隊
+            // 讀取儲存的舞台設定與車輛清單
+            loadSettingsFromStorage();
             loadCarsFromStorage();
             if (state.cars.length === 0) {
-                spawnDemoFleet(4, true);
+                spawnDemoFleet(5, true);
             }
 
             // 建立 1920x1080 賽道曲線查找表並調整畫布解析度
@@ -493,27 +668,49 @@
             resizeRoadCanvas();
             window.addEventListener('resize', resizeRoadCanvas);
 
-            // 快捷鍵支援（F 鍵切換投影機全螢幕、M 鍵切換工作站）
+            // 解析網址參數決定初始頁面 (?mode=backstage 或 #backstage)
+            const params = new URLSearchParams(window.location.search);
+            const urlMode = params.get('mode') || window.location.hash.replace('#', '');
+            if (['screen', 'station', 'backstage'].includes(urlMode)) {
+                switchMode(urlMode);
+            } else {
+                switchMode('screen');
+            }
+            syncBackstageUIControls();
+            renderBackstageFleetList();
+
+            // 快捷鍵支援（F 鍵切換投影機全螢幕）
             window.addEventListener('keydown', (e) => {
                 if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
                 if (e.key.toLowerCase() === 'f') toggleProjectorMode();
-                if (e.key.toLowerCase() === 'm') switchMode(state.mode === 'screen' ? 'station' : 'screen');
             });
 
-            // 跨分頁即時同步監聽
+            // 跨分頁即時同步監聽（後台控制與大銀幕雙向即時同步）
             if (syncChannel) {
                 syncChannel.onmessage = (event) => {
-                    if (event.data && event.data.type === 'NEW_CAR') {
-                        ingestExternalCar(event.data.car);
-                    } else if (event.data && event.data.type === 'CLEAR_CARS') {
+                    const msg = event.data;
+                    if (!msg) return;
+                    if (msg.type === 'NEW_CAR') {
+                        ingestExternalCar(msg.car);
+                    } else if (msg.type === 'UPDATE_SETTINGS') {
+                        applySettingsObject(msg.settings);
+                    } else if (msg.type === 'SYNC_FLEET') {
+                        replaceFleetFromSync(msg.cars);
+                    } else if (msg.type === 'SPOTLIGHT_CAR') {
+                        spotlightCarById(msg.id, false);
+                    } else if (msg.type === 'CLEAR_CARS') {
                         state.cars = [];
                         updateCarCounter();
+                        renderBackstageFleetList();
                     }
                 };
             }
             window.addEventListener('storage', (e) => {
                 if (e.key === STORAGE_KEY) {
-                    loadCarsFromStorage();
+                    loadCarsFromStorage(true);
+                    renderBackstageFleetList();
+                } else if (e.key === SETTINGS_KEY) {
+                    loadSettingsFromStorage();
                 }
             });
 
@@ -522,27 +719,66 @@
         });
 
         // =========================================================================
-        // 2. 畫面與模式切換控制
+        // 2. 畫面與模式切換控制 + 獨立視窗開啟
         // =========================================================================
         function switchMode(newMode) {
             state.mode = newMode;
-            const viewScreen = document.getElementById('viewScreen');
-            const viewStation = document.getElementById('viewStation');
-            const btnScreen = document.getElementById('btnModeScreen');
-            const btnStation = document.getElementById('btnModeStation');
+            const views = {
+                screen: document.getElementById('viewScreen'),
+                station: document.getElementById('viewStation'),
+                backstage: document.getElementById('viewBackstage')
+            };
+            const btns = {
+                screen: document.getElementById('btnModeScreen'),
+                station: document.getElementById('btnModeStation'),
+                backstage: document.getElementById('btnModeBackstage')
+            };
+
+            const activeCls = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-yellow-400 text-slate-950 shadow';
+            const inactiveCls = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
+
+            Object.keys(views).forEach(key => {
+                if (key === newMode) {
+                    views[key].classList.remove('hidden');
+                    btns[key].className = activeCls;
+                } else {
+                    views[key].classList.add('hidden');
+                    btns[key].className = inactiveCls;
+                }
+            });
 
             if (newMode === 'screen') {
-                viewScreen.classList.remove('hidden');
-                viewStation.classList.add('hidden');
-                btnScreen.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-yellow-400 text-slate-950 shadow';
-                btnStation.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
                 resizeRoadCanvas();
-            } else {
-                viewScreen.classList.add('hidden');
-                viewStation.classList.remove('hidden');
-                btnStation.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 bg-yellow-400 text-slate-950 shadow';
-                btnScreen.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
+            } else if (newMode === 'backstage') {
+                syncBackstageUIControls();
+                renderBackstageFleetList();
             }
+        }
+
+        function openBackstageWindow() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('mode', 'backstage');
+            window.open(url.toString(), 'YellowBusBackstage', 'width=1120,height=820');
+            showFeedback('已在新視窗開啟獨立後台控制台！', '🎛️');
+        }
+
+        function openScreenWindow() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('mode', 'screen');
+            window.open(url.toString(), 'YellowBusBigScreen', 'width=1280,height=720');
+            showFeedback('已在新視窗開啟 16:9 大銀幕巡遊畫面！', '🖥️');
+        }
+
+        function copyBackstageUrl() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('mode', 'backstage');
+            const tempInput = document.createElement('input');
+            tempInput.value = url.toString();
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showFeedback('已複製後台控制台網址，可貼到控制電腦或平板開啟！', '🔗');
         }
 
         function switchStationTab(tab) {
@@ -565,24 +801,20 @@
             }
         }
 
-        function toggleOrganizerDrawer() {
-            document.getElementById('organizerDrawer').classList.toggle('hidden');
-        }
-
         function toggleProjectorMode() {
             state.projectorMode = !state.projectorMode;
             if (state.mode !== 'screen') switchMode('screen');
 
             const header = document.getElementById('topHeader');
-            const drawer = document.getElementById('organizerDrawer');
             const exitBtn = document.getElementById('btnExitProjector');
             const aspectBadge = document.getElementById('aspectBadge');
+            const quickActions = document.getElementById('screenQuickActions');
 
             if (state.projectorMode) {
                 document.body.classList.add('projector-active');
                 header.classList.add('hidden');
-                drawer.classList.add('hidden');
                 aspectBadge.classList.add('hidden');
+                quickActions.classList.add('hidden');
                 exitBtn.classList.remove('hidden');
                 if (document.documentElement.requestFullscreen) {
                     document.documentElement.requestFullscreen().catch(() => {});
@@ -591,6 +823,7 @@
                 document.body.classList.remove('projector-active');
                 header.classList.remove('hidden');
                 aspectBadge.classList.remove('hidden');
+                quickActions.classList.remove('hidden');
                 exitBtn.classList.add('hidden');
                 if (document.fullscreenElement && document.exitFullscreen) {
                     document.exitFullscreen().catch(() => {});
@@ -606,6 +839,21 @@
             document.getElementById('templateModal').classList.add('hidden');
         }
 
+        function switchPrintableTemplate(type) {
+            const isBus = type === 'bus';
+            document.getElementById('tplSvgBus').classList.toggle('hidden', !isBus);
+            document.getElementById('tplSvgCar').classList.toggle('hidden', isBus);
+            document.getElementById('tplHeading').textContent = isBus
+                ? '黃色巴士填色紙 — 塗上顏色後拍照上傳到大銀幕！'
+                : '黃色小車填色紙 — 塗上顏色後拍照上傳到大銀幕！';
+            document.getElementById('btnTplBus').className = isBus
+                ? 'px-3 py-1 rounded-lg text-xs font-bold bg-yellow-400 text-slate-950 shadow-sm'
+                : 'px-3 py-1 rounded-lg text-xs font-bold text-slate-600';
+            document.getElementById('btnTplCar').className = !isBus
+                ? 'px-3 py-1 rounded-lg text-xs font-bold bg-yellow-400 text-slate-950 shadow-sm'
+                : 'px-3 py-1 rounded-lg text-xs font-bold text-slate-600';
+        }
+
         function showFeedback(text, icon = '✅') {
             const box = document.getElementById('feedbackBanner');
             document.getElementById('feedbackText').textContent = text;
@@ -615,18 +863,232 @@
             box._timer = setTimeout(() => box.classList.add('hidden'), 3200);
         }
 
-        function initControlListeners() {
-            document.getElementById('ctrlSpeed').addEventListener('input', (e) => {
-                state.speedMultiplier = parseFloat(e.target.value);
-                document.getElementById('valSpeed').textContent = state.speedMultiplier.toFixed(1) + 'x';
+        // =========================================================================
+        // 2B. 後台控制台即時參數控制與同步邏輯
+        // =========================================================================
+        function updateSpeedFromBackstage(val) {
+            state.speedMultiplier = parseFloat(val);
+            syncBackstageUIControls();
+            broadcastAndSaveSettings();
+        }
+
+        function updateMaxCarsFromBackstage(val) {
+            state.maxVisibleCars = parseInt(val, 10);
+            syncBackstageUIControls();
+            updateCarCounter();
+            renderBackstageFleetList();
+            broadcastAndSaveSettings();
+        }
+
+        function updateScaleFromBackstage(val) {
+            state.carScale = parseFloat(val);
+            syncBackstageUIControls();
+            broadcastAndSaveSettings();
+        }
+
+        function updateLabelsFromBackstage(checked) {
+            state.showLabels = checked;
+            broadcastAndSaveSettings();
+        }
+
+        function updateJoinBannerFromBackstage(checked) {
+            state.showJoinBanner = checked;
+            applyJoinBannerVisibility();
+            broadcastAndSaveSettings();
+        }
+
+        function applyJoinBannerVisibility() {
+            const banner = document.getElementById('joinBanner');
+            if (banner) {
+                banner.classList.toggle('hidden', !state.showJoinBanner);
+            }
+        }
+
+        function syncBackstageUIControls() {
+            const speedSlider = document.getElementById('bsCtrlSpeed');
+            const maxSlider = document.getElementById('bsCtrlMaxCars');
+            const scaleSlider = document.getElementById('bsCtrlScale');
+            const labelsChk = document.getElementById('bsCtrlLabels');
+            const bannerChk = document.getElementById('bsCtrlJoinBanner');
+
+            if (speedSlider) speedSlider.value = state.speedMultiplier;
+            if (document.getElementById('bsValSpeed')) {
+                document.getElementById('bsValSpeed').textContent = state.speedMultiplier === 0 ? '暫停 0x' : state.speedMultiplier.toFixed(1) + 'x';
+            }
+
+            if (maxSlider) maxSlider.value = state.maxVisibleCars;
+            if (document.getElementById('bsValMaxCars')) {
+                document.getElementById('bsValMaxCars').textContent = state.maxVisibleCars;
+            }
+
+            if (scaleSlider) scaleSlider.value = state.carScale;
+            if (document.getElementById('bsValScale')) {
+                document.getElementById('bsValScale').textContent = state.carScale.toFixed(1) + 'x';
+            }
+
+            if (labelsChk) labelsChk.checked = state.showLabels;
+            if (bannerChk) bannerChk.checked = state.showJoinBanner;
+            applyJoinBannerVisibility();
+        }
+
+        function broadcastAndSaveSettings() {
+            const payload = {
+                speedMultiplier: state.speedMultiplier,
+                maxVisibleCars: state.maxVisibleCars,
+                carScale: state.carScale,
+                showLabels: state.showLabels,
+                showJoinBanner: state.showJoinBanner
+            };
+            try {
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
+            } catch (e) {}
+            if (syncChannel) {
+                syncChannel.postMessage({ type: 'UPDATE_SETTINGS', settings: payload });
+            }
+        }
+
+        function applySettingsObject(settings) {
+            if (!settings) return;
+            if (typeof settings.speedMultiplier === 'number') state.speedMultiplier = settings.speedMultiplier;
+            if (typeof settings.maxVisibleCars === 'number') state.maxVisibleCars = settings.maxVisibleCars;
+            if (typeof settings.carScale === 'number') state.carScale = settings.carScale;
+            if (typeof settings.showLabels === 'boolean') state.showLabels = settings.showLabels;
+            if (typeof settings.showJoinBanner === 'boolean') state.showJoinBanner = settings.showJoinBanner;
+            syncBackstageUIControls();
+            updateCarCounter();
+            if (state.mode === 'backstage') renderBackstageFleetList();
+        }
+
+        function loadSettingsFromStorage() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (!raw) return;
+                applySettingsObject(JSON.parse(raw));
+            } catch (e) {}
+        }
+
+        // 取得目前符合「同場數量上限」且未隱藏的活躍車輛
+        function getActiveTrackCars() {
+            const visibleList = state.cars.filter(c => !c.hidden);
+            return visibleList.slice(-state.maxVisibleCars);
+        }
+
+        function renderBackstageFleetList() {
+            const grid = document.getElementById('backstageFleetGrid');
+            if (!grid) return;
+
+            const activeIds = new Set(getActiveTrackCars().map(c => c.id));
+            document.getElementById('bsTotalCount').textContent = state.cars.length;
+            document.getElementById('bsActiveCount').textContent = activeIds.size;
+
+            if (state.cars.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-sm bg-slate-950/60 rounded-2xl border border-slate-800">目前賽道上沒有巴士，請點擊上方「+ 5 輛示範巴士」或等待觀眾上傳！</div>`;
+                return;
+            }
+
+            grid.innerHTML = [...state.cars].reverse().map(car => {
+                const isOnStage = activeIds.has(car.id);
+                const statusBadge = car.hidden
+                    ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-400">已隱藏</span>`
+                    : isOnStage
+                        ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">大銀幕行駛中</span>`
+                        : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300">排隊候補中（超出上限）</span>`;
+
+                return `
+                    <div class="bg-slate-950/90 border ${isOnStage ? 'border-slate-700' : 'border-slate-800/70 opacity-75'} rounded-2xl p-3 flex items-center gap-3">
+                        <div class="w-20 h-14 rounded-xl checkerboard flex items-center justify-center p-1 flex-shrink-0 overflow-hidden">
+                            <img src="${car.dataUrl}" alt="${car.name}" class="max-w-full max-h-full object-contain">
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 mb-1">
+                                ${statusBadge}
+                            </div>
+                            <p class="font-display text-sm text-white truncate">${car.name}</p>
+                            <div class="flex items-center gap-1.5 mt-2">
+                                <button onclick="spotlightCarById('${car.id}', true)" class="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 text-[11px] font-bold transition" title="在大銀幕閃耀聚焦 5 秒">
+                                    ✨ 聚焦
+                                </button>
+                                <button onclick="toggleCarVisibility('${car.id}')" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold transition">
+                                    ${car.hidden ? '👁️ 顯示' : '🙈 隱藏'}
+                                </button>
+                                <button onclick="removeCarById('${car.id}')" class="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-bold transition" title="刪除此巴士">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function spotlightCarById(id, broadcast = true) {
+            const car = state.cars.find(c => c.id === id);
+            if (!car) return;
+            car.hidden = false;
+            car.highlightTimer = 6.0;
+            triggerSparkleBurst(car.progress);
+            triggerArrivalBanner('✨ 特寫聚焦：' + car.name);
+            if (broadcast) {
+                syncFleetAcrossTabs();
+                if (syncChannel) syncChannel.postMessage({ type: 'SPOTLIGHT_CAR', id });
+                showFeedback(`已在大銀幕聚焦「${car.name}」！`, '✨');
+            }
+        }
+
+        function toggleCarVisibility(id) {
+            const car = state.cars.find(c => c.id === id);
+            if (!car) return;
+            car.hidden = !car.hidden;
+            updateCarCounter();
+            renderBackstageFleetList();
+            syncFleetAcrossTabs();
+        }
+
+        function removeCarById(id) {
+            state.cars = state.cars.filter(c => c.id !== id);
+            updateCarCounter();
+            renderBackstageFleetList();
+            syncFleetAcrossTabs();
+            showFeedback('已從巡遊車隊移除該車輛。', '🗑️');
+        }
+
+        function evenOutSpacing() {
+            const active = getActiveTrackCars();
+            if (active.length === 0) return;
+            active.forEach((car, idx) => {
+                car.progress = (idx / active.length) % 1;
             });
-            document.getElementById('ctrlScale').addEventListener('input', (e) => {
-                state.carScale = parseFloat(e.target.value);
-                document.getElementById('valScale').textContent = state.carScale.toFixed(1) + 'x';
+            syncFleetAcrossTabs();
+            showFeedback('已重新平均分配所有巴士在賽道上的間距！', '📐');
+        }
+
+        function syncFleetAcrossTabs() {
+            saveCarsToStorage();
+            if (syncChannel) {
+                const serializable = state.cars.map(({ id, name, dataUrl, progress, speed, phase, hidden }) => ({
+                    id, name, dataUrl, progress, speed, phase, hidden: !!hidden
+                }));
+                syncChannel.postMessage({ type: 'SYNC_FLEET', cars: serializable });
+            }
+        }
+
+        function replaceFleetFromSync(list) {
+            if (!Array.isArray(list)) return;
+            const existingMap = new Map(state.cars.map(c => [c.id, c]));
+            state.cars = list.map(item => {
+                const prev = existingMap.get(item.id);
+                if (prev) {
+                    prev.name = item.name;
+                    prev.hidden = !!item.hidden;
+                    prev.progress = item.progress;
+                    return prev;
+                }
+                const img = new Image();
+                img.src = item.dataUrl;
+                return { ...item, img, highlightTimer: 0, smokeTimer: Math.random() * 0.25 };
             });
-            document.getElementById('ctrlLabels').addEventListener('change', (e) => {
-                state.showLabels = e.target.checked;
-            });
+            updateCarCounter();
+            if (state.mode === 'backstage') renderBackstageFleetList();
         }
 
         // =========================================================================
@@ -1040,23 +1502,27 @@
                 c.x = (c.x + c.speed * dt) % 1.15;
             });
 
-            state.cars.forEach(car => {
+            const activeCars = getActiveTrackCars();
+
+            activeCars.forEach(car => {
                 car.progress = (car.progress + car.speed * state.speedMultiplier * dt) % 1;
                 if (car.highlightTimer > 0) car.highlightTimer = Math.max(0, car.highlightTimer - dt);
 
-                // 定期產生可愛車尾白煙粒子
-                car.smokeTimer = (car.smokeTimer || 0) - dt;
-                if (car.smokeTimer <= 0) {
-                    car.smokeTimer = 0.24 + Math.random() * 0.16;
-                    const pose = sampleRoadAtProgress(car.progress);
-                    state.exhaustPuffs.push({
-                        x: pose.x - Math.cos(pose.angle) * 58 * state.carScale,
-                        y: pose.y - Math.sin(pose.angle) * 58 * state.carScale + 12,
-                        vx: -Math.cos(pose.angle) * 24 + (Math.random() - 0.5) * 14,
-                        vy: -Math.sin(pose.angle) * 24 - 12,
-                        life: 0.65,
-                        size: 7 * state.carScale
-                    });
+                // 僅在巴士移動時產生可愛車尾白煙粒子
+                if (state.speedMultiplier > 0) {
+                    car.smokeTimer = (car.smokeTimer || 0) - dt;
+                    if (car.smokeTimer <= 0) {
+                        car.smokeTimer = 0.24 + Math.random() * 0.16;
+                        const pose = sampleRoadAtProgress(car.progress);
+                        state.exhaustPuffs.push({
+                            x: pose.x - Math.cos(pose.angle) * 62 * state.carScale,
+                            y: pose.y - Math.sin(pose.angle) * 62 * state.carScale + 12,
+                            vx: -Math.cos(pose.angle) * 24 + (Math.random() - 0.5) * 14,
+                            vy: -Math.sin(pose.angle) * 24 - 12,
+                            life: 0.65,
+                            size: 7 * state.carScale
+                        });
+                    }
                 }
             });
 
@@ -1085,7 +1551,7 @@
                 drawScenicWorld(rCtx, STAGE_W, STAGE_H, timeSec);
                 drawExhaustPuffs(rCtx);
 
-                const sortedCars = [...state.cars].map(car => {
+                const sortedCars = activeCars.map(car => {
                     const pose = sampleRoadAtProgress(car.progress);
                     return { car, pose };
                 }).sort((a, b) => a.pose.y - b.pose.y);
@@ -1265,23 +1731,23 @@
             reader.readAsDataURL(file);
         }
 
-        // 載入模擬紙本填色相片，方便現場示範測試去背效果
+        // 載入模擬紙本填色相片（黃色巴士），方便現場示範測試去背效果
         function loadSamplePaperPhoto() {
             const off = document.createElement('canvas');
-            off.width = 600;
+            off.width = 620;
             off.height = 400;
             const ctx = off.getContext('2d');
 
             ctx.fillStyle = '#f4f2ec';
-            ctx.fillRect(0, 0, 600, 400);
+            ctx.fillRect(0, 0, 620, 400);
 
-            const grad = ctx.createRadialGradient(300, 200, 60, 300, 200, 340);
+            const grad = ctx.createRadialGradient(310, 200, 60, 310, 200, 340);
             grad.addColorStop(0, 'rgba(255,255,255,0.6)');
             grad.addColorStop(1, 'rgba(210,205,195,0.45)');
             ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 600, 400);
+            ctx.fillRect(0, 0, 620, 400);
 
-            drawVectorCarArtwork(ctx, 300, 210, 1.0, {
+            drawVectorBusArtwork(ctx, 310, 205, 0.96, {
                 bodyColor: '#facc15',
                 stripeColor: '#ef4444',
                 number: '88'
@@ -1295,7 +1761,7 @@
                 document.getElementById('uploadDropzone').classList.add('hidden');
                 document.getElementById('cutoutEditorArea').classList.remove('hidden');
                 processPhotoCutout();
-                showFeedback('已載入範例填色紙相片！可拖動滑桿微調去背範圍。', '✂️');
+                showFeedback('已載入範例黃色巴士相片！可拖動滑桿微調去背範圍。', '✂️');
             };
             img.src = off.toDataURL('image/png');
         }
@@ -1390,144 +1856,164 @@
                 cutoutCanvas.height = ch;
                 cCtx.clearRect(0, 0, cw, ch);
                 cCtx.drawImage(workCanvas, cx, cy, cw, ch, 0, 0, cw, ch);
+                cutoutState.processedDataUrl = cutoutCanvas.toDataURL('image/png');
             } else {
                 cutoutCanvas.width = workW;
                 cutoutCanvas.height = workH;
                 cCtx.clearRect(0, 0, workW, workH);
                 cCtx.drawImage(workCanvas, 0, 0);
+                cutoutState.processedDataUrl = cutoutCanvas.toDataURL('image/png');
             }
-
-            cutoutState.processedDataUrl = cutoutCanvas.toDataURL('image/png');
         }
 
         // =========================================================================
-        // 6. 即時手繪工作室（支援觸控與滑鼠）
+        // 6. 即時手繪黃色巴士 / 小車工作室
         // =========================================================================
         const paintCanvas = document.getElementById('paintCanvas');
         const pCtx = paintCanvas.getContext('2d');
-
-        const userInkLayer = document.createElement('canvas');
-        userInkLayer.width = paintCanvas.width;
-        userInkLayer.height = paintCanvas.height;
-        const inkCtx = userInkLayer.getContext('2d');
-
-        const PALETTE_COLORS = [
-            '#facc15', // 經典巡遊黃
-            '#f59e0b', // 琥珀金
-            '#ef4444', // 賽車紅
-            '#f97316', // 活力橙
-            '#3b82f6', // 天空藍
-            '#10b981', // 翡翠綠
-            '#a855f7', // 夢幻紫
-            '#ec4899', // 蜜桃粉
-            '#0f172a', // 酷炫黑
-            '#ffffff'  // 純潔白
-        ];
+        let userInkLayer = null;
 
         function initPaintStudio() {
-            const swatchWrap = document.getElementById('colorSwatches');
-            PALETTE_COLORS.forEach((hex, idx) => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = `w-8 h-8 rounded-full border-2 transition transform hover:scale-110 ${idx === 2 ? 'ring-2 ring-offset-2 ring-slate-900 scale-110' : 'border-slate-300'}`;
-                btn.style.backgroundColor = hex;
-                btn.onclick = () => {
-                    paintState.color = hex;
-                    paintState.isEraser = false;
-                    document.getElementById('btnEraser').classList.remove('bg-yellow-300', 'border-slate-900');
-                    Array.from(swatchWrap.children).forEach(c => c.classList.remove('ring-2', 'ring-offset-2', 'ring-slate-900', 'scale-110'));
-                    btn.classList.add('ring-2', 'ring-offset-2', 'ring-slate-900', 'scale-110');
-                };
-                swatchWrap.appendChild(btn);
+            userInkLayer = document.createElement('canvas');
+            userInkLayer.width = paintCanvas.width;
+            userInkLayer.height = paintCanvas.height;
+            const uCtx = userInkLayer.getContext('2d');
+            uCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+
+            const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#a855f7', '#ec4899', '#0f172a', '#ffffff'];
+            const swatchesContainer = document.getElementById('colorSwatches');
+            swatchesContainer.innerHTML = colors.map((col, idx) => `
+                <button type="button" onclick="setPaintColor('${col}')" class="w-8 h-8 rounded-full border-2 ${idx === 0 ? 'border-slate-900 scale-110 shadow' : 'border-white'} transition transform hover:scale-105" style="background-color: ${col};" data-color="${col}"></button>
+            `).join('');
+
+            const boundEvents = ['mousedown', 'touchstart', 'mousemove', 'touchmove', 'mouseup', 'touchend', 'mouseleave'];
+            boundEvents.forEach(evt => {
+                paintCanvas.addEventListener(evt, handlePaintPointerEvent, { passive: false });
             });
 
-            resetPaintCanvas();
+            compositePaintStudio();
+        }
 
-            const getPos = (e) => {
-                const rect = paintCanvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return {
-                    x: (clientX - rect.left) * (paintCanvas.width / rect.width),
-                    y: (clientY - rect.top) * (paintCanvas.height / rect.height)
-                };
-            };
-
-            const startStroke = (e) => {
-                e.preventDefault();
-                savePaintHistory();
-                paintState.isDrawing = true;
-                const pt = getPos(e);
-                inkCtx.lineCap = 'round';
-                inkCtx.lineJoin = 'round';
-                inkCtx.lineWidth = paintState.brushSize;
-                if (paintState.isEraser) {
-                    inkCtx.globalCompositeOperation = 'destination-out';
-                    inkCtx.strokeStyle = 'rgba(0,0,0,1)';
+        function setPaintColor(col) {
+            paintState.color = col;
+            paintState.isEraser = false;
+            document.getElementById('btnEraser').classList.remove('bg-yellow-200', 'border-yellow-400');
+            document.querySelectorAll('#colorSwatches button').forEach(btn => {
+                if (btn.dataset.color === col) {
+                    btn.classList.add('border-slate-900', 'scale-110', 'shadow');
                 } else {
-                    inkCtx.globalCompositeOperation = 'source-over';
-                    inkCtx.strokeStyle = paintState.color;
+                    btn.classList.remove('border-slate-900', 'scale-110', 'shadow');
                 }
-                inkCtx.beginPath();
-                inkCtx.moveTo(pt.x, pt.y);
-                inkCtx.lineTo(pt.x + 0.1, pt.y + 0.1);
-                inkCtx.stroke();
-                compositePaintStudio();
-            };
-
-            const moveStroke = (e) => {
-                if (!paintState.isDrawing) return;
-                e.preventDefault();
-                const pt = getPos(e);
-                inkCtx.lineTo(pt.x, pt.y);
-                inkCtx.stroke();
-                compositePaintStudio();
-            };
-
-            const endStroke = () => {
-                paintState.isDrawing = false;
-                inkCtx.globalCompositeOperation = 'source-over';
-            };
-
-            paintCanvas.addEventListener('mousedown', startStroke);
-            paintCanvas.addEventListener('mousemove', moveStroke);
-            window.addEventListener('mouseup', endStroke);
-
-            paintCanvas.addEventListener('touchstart', startStroke, { passive: false });
-            paintCanvas.addEventListener('touchmove', moveStroke, { passive: false });
-            window.addEventListener('touchend', endStroke);
+            });
         }
 
         function setBrushSize(sz) {
             paintState.brushSize = sz;
-            paintState.isEraser = false;
-            document.getElementById('btnEraser').classList.remove('bg-yellow-300', 'border-slate-900');
             document.querySelectorAll('.brush-size-btn').forEach(btn => {
-                btn.classList.toggle('bg-yellow-200', parseInt(btn.dataset.size, 10) === sz);
+                if (parseInt(btn.dataset.size, 10) === sz) {
+                    btn.classList.add('bg-yellow-200');
+                } else {
+                    btn.classList.remove('bg-yellow-200');
+                }
             });
         }
 
         function setEraserMode() {
-            paintState.isEraser = !paintState.isEraser;
-            document.getElementById('btnEraser').classList.toggle('bg-yellow-300', paintState.isEraser);
-            document.getElementById('btnEraser').classList.toggle('border-slate-900', paintState.isEraser);
+            paintState.isEraser = true;
+            document.getElementById('btnEraser').classList.add('bg-yellow-200', 'border-yellow-400');
         }
 
-        function savePaintHistory() {
+        function pushPaintHistory() {
+            const uCtx = userInkLayer.getContext('2d');
             if (paintState.history.length > 15) paintState.history.shift();
-            paintState.history.push(inkCtx.getImageData(0, 0, userInkLayer.width, userInkLayer.height));
+            paintState.history.push(uCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height));
         }
 
         function undoPaint() {
             if (paintState.history.length === 0) return;
             const prev = paintState.history.pop();
-            inkCtx.putImageData(prev, 0, 0);
+            const uCtx = userInkLayer.getContext('2d');
+            uCtx.putImageData(prev, 0, 0);
             compositePaintStudio();
         }
 
         function resetPaintCanvas() {
-            paintState.history = [];
-            inkCtx.clearRect(0, 0, userInkLayer.width, userInkLayer.height);
+            pushPaintHistory();
+            const uCtx = userInkLayer.getContext('2d');
+            uCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+            compositePaintStudio();
+            showFeedback('已清除手繪筆跡！', '🗑️');
+        }
+
+        let lastPaintPos = null;
+        function handlePaintPointerEvent(e) {
+            e.preventDefault();
+            const rect = paintCanvas.getBoundingClientRect();
+            let clientX, clientY;
+
+            if (e.touches && e.touches[0]) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches[0]) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const scaleX = paintCanvas.width / rect.width;
+            const scaleY = paintCanvas.height / rect.height;
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+
+            const type = e.type;
+            if (type === 'mousedown' || type === 'touchstart') {
+                pushPaintHistory();
+                paintState.isDrawing = true;
+                lastPaintPos = { x, y };
+            } else if (type === 'mousemove' || type === 'touchmove') {
+                if (!paintState.isDrawing) return;
+                drawLineOnInkLayer(lastPaintPos.x, lastPaintPos.y, x, y);
+                lastPaintPos = { x, y };
+                compositePaintStudio();
+            } else if (type === 'mouseup' || type === 'touchend' || type === 'mouseleave') {
+                paintState.isDrawing = false;
+                lastPaintPos = null;
+            }
+        }
+
+        function drawLineOnInkLayer(x0, y0, x1, y1) {
+            const uCtx = userInkLayer.getContext('2d');
+            uCtx.save();
+            uCtx.lineCap = 'round';
+            uCtx.lineJoin = 'round';
+            uCtx.lineWidth = paintState.brushSize;
+
+            if (paintState.isEraser) {
+                uCtx.globalCompositeOperation = 'destination-out';
+                uCtx.strokeStyle = 'rgba(0,0,0,1)';
+            } else {
+                uCtx.globalCompositeOperation = 'source-over';
+                uCtx.strokeStyle = paintState.color;
+            }
+
+            uCtx.beginPath();
+            uCtx.moveTo(x0, y0);
+            uCtx.lineTo(x1, y1);
+            uCtx.stroke();
+            uCtx.restore();
+        }
+
+        function setPaintVehicleType(type) {
+            paintState.vehicleType = type;
+            const isBus = type === 'bus';
+            document.getElementById('btnShapeBus').className = isBus
+                ? 'px-2.5 py-1 rounded-lg text-xs font-bold bg-yellow-400 text-slate-950 shadow-sm'
+                : 'px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900';
+            document.getElementById('btnShapeCar').className = !isBus
+                ? 'px-2.5 py-1 rounded-lg text-xs font-bold bg-yellow-400 text-slate-950 shadow-sm'
+                : 'px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900';
             compositePaintStudio();
         }
 
@@ -1537,7 +2023,11 @@
             pCtx.clearRect(0, 0, w, h);
 
             pCtx.save();
-            traceCarBodyPath(pCtx, w / 2, h / 2 + 12, 1.18);
+            if (paintState.vehicleType === 'bus') {
+                traceBusBodyPath(pCtx, w / 2, h / 2 + 12, 1.05);
+            } else {
+                traceCarBodyPath(pCtx, w / 2, h / 2 + 12, 1.18);
+            }
             pCtx.fillStyle = '#facc15';
             pCtx.fill();
 
@@ -1545,12 +2035,138 @@
             pCtx.drawImage(userInkLayer, 0, 0);
             pCtx.restore();
 
-            drawCarOutlinesAndWheels(pCtx, w / 2, h / 2 + 12, 1.18);
+            if (paintState.vehicleType === 'bus') {
+                drawBusOutlinesAndWheels(pCtx, w / 2, h / 2 + 12, 1.05);
+            } else {
+                drawCarOutlinesAndWheels(pCtx, w / 2, h / 2 + 12, 1.18);
+            }
         }
 
         // =========================================================================
-        // 7. 向量黃色小車造型繪製器（供手繪室及示範車隊使用）
+        // 7. 向量黃色巴士 & 黃色小車造型繪製器（供手繪室及示範車隊使用）
         // =========================================================================
+        function traceBusBodyPath(ctx, cx, cy, scale) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(scale, scale);
+            ctx.beginPath();
+            ctx.moveTo(-225, 48);
+            ctx.lineTo(-225, -72);
+            ctx.quadraticCurveTo(-225, -94, -200, -94);
+            ctx.lineTo(182, -94);
+            ctx.quadraticCurveTo(210, -94, 216, -66);
+            ctx.lineTo(226, -6);
+            ctx.quadraticCurveTo(230, 16, 226, 36);
+            ctx.quadraticCurveTo(224, 48, 206, 48);
+            ctx.closePath();
+            ctx.restore();
+        }
+
+        function drawBusOutlinesAndWheels(ctx, cx, cy, scale) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(scale, scale);
+
+            traceBusBodyPath(ctx, 0, 0, 1);
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            // 車身腰線
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-223, -12);
+            ctx.lineTo(224, -12);
+            ctx.stroke();
+
+            // 乘客車窗（4扇）
+            ctx.fillStyle = '#bae6fd';
+            ctx.lineWidth = 4.5;
+            [-202, -124, -46, 32].forEach(wx => {
+                ctx.beginPath();
+                ctx.roundRect(wx, -76, 64, 52, 8);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // 駕駛艙擋風玻璃
+            ctx.beginPath();
+            ctx.moveTo(110, -76);
+            ctx.lineTo(176, -76);
+            ctx.quadraticCurveTo(190, -76, 194, -62);
+            ctx.lineTo(202, -24);
+            ctx.lineTo(110, -24);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 車頭燈與車尾燈
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath();
+            ctx.roundRect(212, 8, 12, 20, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.roundRect(-228, 8, 10, 22, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            // 前後巴士大車輪
+            [-145, 138].forEach(wx => {
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(wx, 50, 40, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#0f172a';
+                ctx.stroke();
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath();
+                ctx.arc(wx, 50, 19, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(wx, 50, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+
+        function drawVectorBusArtwork(ctx, cx, cy, scale, opts = {}) {
+            traceBusBodyPath(ctx, cx, cy, scale);
+            ctx.fillStyle = opts.bodyColor || '#facc15';
+            ctx.fill();
+
+            ctx.save();
+            traceBusBodyPath(ctx, cx, cy, scale);
+            ctx.clip();
+
+            ctx.fillStyle = opts.stripeColor || '#ef4444';
+            ctx.fillRect(cx - 240 * scale, cy - 2 * scale, 480 * scale, 16 * scale);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cx - 5 * scale, cy + 16 * scale, 20 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#0f172a';
+            ctx.font = `bold ${Math.round(18 * scale)}px Fredoka, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(opts.number || '88', cx - 5 * scale, cy + 17 * scale);
+
+            ctx.restore();
+            drawBusOutlinesAndWheels(ctx, cx, cy, scale);
+        }
+
         function traceCarBodyPath(ctx, cx, cy, scale) {
             ctx.save();
             ctx.translate(cx, cy);
@@ -1694,16 +2310,16 @@
         }
 
         // =========================================================================
-        // 8. 傳送小車至大銀幕與多裝置／多分頁即時同步
+        // 8. 傳送巴士至大銀幕與多裝置／多分頁即時同步
         // =========================================================================
         function launchCarToTrack() {
             const rawName = document.getElementById('driverNameInput').value.trim();
-            const driverName = rawName || '黃色小車 #' + (state.cars.length + 1);
+            const driverName = rawName || '黃色巴士 #' + (state.cars.length + 1);
 
             let carDataUrl = null;
             if (state.stationTab === 'photo') {
                 if (!cutoutState.processedDataUrl) {
-                    showFeedback('請先拍攝或上傳填色相片，或切換至「即時手繪小車」！', '📸');
+                    showFeedback('請先拍攝或上傳填色相片，或切換至「即時手繪巴士」！', '📸');
                     return;
                 }
                 carDataUrl = cutoutState.processedDataUrl;
@@ -1712,16 +2328,18 @@
             }
 
             const newCarRecord = {
-                id: 'car_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                id: 'bus_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
                 name: driverName,
                 dataUrl: carDataUrl,
                 progress: 0.02,
                 speed: 0.036 + Math.random() * 0.016,
-                phase: Math.random() * Math.PI * 2
+                phase: Math.random() * Math.PI * 2,
+                hidden: false
             };
 
             addCarObject(newCarRecord, true);
             saveCarsToStorage();
+            renderBackstageFleetList();
 
             if (syncChannel) {
                 syncChannel.postMessage({ type: 'NEW_CAR', car: newCarRecord });
@@ -1769,6 +2387,7 @@
 
             const carObj = {
                 ...record,
+                hidden: !!record.hidden,
                 img,
                 highlightTimer: isFreshArrival ? 6.0 : 0,
                 smokeTimer: Math.random() * 0.25
@@ -1783,6 +2402,7 @@
 
         function ingestExternalCar(record) {
             addCarObject(record, true);
+            renderBackstageFleetList();
             triggerArrivalBanner(record.name);
         }
 
@@ -1797,13 +2417,16 @@
         }
 
         function updateCarCounter() {
-            document.getElementById('carCountBadge').textContent = state.cars.length;
+            const activeCount = getActiveTrackCars().length;
+            const hudEl = document.getElementById('hudActiveCount');
+            if (hudEl) hudEl.textContent = activeCount;
+            if (state.mode === 'backstage') renderBackstageFleetList();
         }
 
         function saveCarsToStorage() {
             try {
-                const serializable = state.cars.slice(-35).map(({ id, name, dataUrl, progress, speed, phase }) => ({
-                    id, name, dataUrl, progress, speed, phase
+                const serializable = state.cars.slice(-40).map(({ id, name, dataUrl, progress, speed, phase, hidden }) => ({
+                    id, name, dataUrl, progress, speed, phase, hidden: !!hidden
                 }));
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
             } catch (err) {
@@ -1811,12 +2434,16 @@
             }
         }
 
-        function loadCarsFromStorage() {
+        function loadCarsFromStorage(replace = false) {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (!raw) return;
                 const list = JSON.parse(raw);
-                list.forEach(item => addCarObject(item, false));
+                if (replace) {
+                    replaceFleetFromSync(list);
+                } else {
+                    list.forEach(item => addCarObject(item, false));
+                }
             } catch (err) {
                 console.warn('讀取儲存車輛資料失敗。', err);
             }
@@ -1825,35 +2452,44 @@
         function clearAllCars() {
             state.cars = [];
             updateCarCounter();
+            renderBackstageFleetList();
             localStorage.removeItem(STORAGE_KEY);
             if (syncChannel) {
                 syncChannel.postMessage({ type: 'CLEAR_CARS' });
             }
-            showFeedback('已清空賽道，隨時歡迎新小車登場！', '🧹');
+            showFeedback('已清空賽道，隨時歡迎新巴士登場！', '🧹');
         }
 
-        // 生成繁體中文示範車隊，讓大銀幕一開啟即充滿活力
+        // 生成繁體中文示範巴士車隊，讓大銀幕一開啟即充滿活力
         function spawnDemoFleet(count = 5, silent = false) {
             const presets = [
-                { name: '陳小明', body: '#facc15', stripe: '#ef4444', num: '01' },
-                { name: '林美玲', body: '#fde047', stripe: '#3b82f6', num: '07' },
-                { name: '黃伯伯', body: '#eab308', stripe: '#10b981', num: '22' },
-                { name: '李婆婆', body: '#facc15', stripe: '#ec4899', num: '88' },
-                { name: '張家豪', body: '#fef08a', stripe: '#f97316', num: '15' },
-                { name: '周小晴 ❤️', body: '#facc15', stripe: '#a855f7', num: '99' }
+                { name: '陳小明號巴士', type: 'bus', body: '#facc15', stripe: '#ef4444', num: '01' },
+                { name: '林美玲專車', type: 'bus', body: '#fde047', stripe: '#3b82f6', num: '07' },
+                { name: '黃伯伯觀光巴', type: 'bus', body: '#eab308', stripe: '#10b981', num: '22' },
+                { name: '李婆婆幸福巴', type: 'bus', body: '#facc15', stripe: '#ec4899', num: '88' },
+                { name: '張家豪小跑車', type: 'car', body: '#fef08a', stripe: '#f97316', num: '15' },
+                { name: '周小晴 ❤️ 巴士', type: 'bus', body: '#facc15', stripe: '#a855f7', num: '99' }
             ];
 
             for (let i = 0; i < count; i++) {
                 const p = presets[(state.cars.length + i) % presets.length];
                 const off = document.createElement('canvas');
-                off.width = 440;
+                off.width = 480;
                 off.height = 240;
                 const ctx = off.getContext('2d');
-                drawVectorCarArtwork(ctx, 220, 125, 0.96, {
-                    bodyColor: p.body,
-                    stripeColor: p.stripe,
-                    number: p.num
-                });
+                if (p.type === 'bus') {
+                    drawVectorBusArtwork(ctx, 240, 125, 0.92, {
+                        bodyColor: p.body,
+                        stripeColor: p.stripe,
+                        number: p.num
+                    });
+                } else {
+                    drawVectorCarArtwork(ctx, 240, 125, 0.96, {
+                        bodyColor: p.body,
+                        stripeColor: p.stripe,
+                        number: p.num
+                    });
+                }
 
                 const rec = {
                     id: 'demo_' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2, 5),
@@ -1861,12 +2497,14 @@
                     dataUrl: off.toDataURL('image/png'),
                     progress: ((i / count) + Math.random() * 0.08) % 1,
                     speed: 0.034 + Math.random() * 0.018,
-                    phase: Math.random() * Math.PI * 2
+                    phase: Math.random() * Math.PI * 2,
+                    hidden: false
                 };
                 addCarObject(rec, !silent);
             }
             saveCarsToStorage();
-            if (!silent) showFeedback(`已加入 ${count} 輛示範黃色小車到巡遊賽道！`, '🚗');
+            renderBackstageFleetList();
+            if (!silent) showFeedback(`已加入 ${count} 輛示範黃色巴士到巡遊賽道！`, '🚌');
         }
     </script>
 </body>
