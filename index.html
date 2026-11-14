@@ -96,7 +96,7 @@
     canvas.height = LOGICAL_HEIGHT;
 
     const bc = new BroadcastChannel('bus_parade_channel');
-    let busSpeed = 1.5; // 預設速度加快
+    let busSpeed = 1.5;
     let maxBuses = 12;
     let busSizeScale = 1.0;
     let focusedBusId = null;
@@ -441,7 +441,7 @@
         drawBackground();
 
         const activeBuses = buses.filter(b => !b.hidden).slice(0, maxBuses);
-        const speedStep = 0.00025 * busSpeed; // 基礎速度系數調高
+        const speedStep = 0.00025 * busSpeed;
 
         activeBuses.forEach((bus, index) => {
             if (bus.dist === undefined) {
@@ -453,12 +453,16 @@
             const pos = getBezierPoint(bus.dist);
             ctx.save();
             ctx.translate(pos.x, pos.y);
-            ctx.rotate(pos.angle);
 
-            // 【車輛方向矯正】當行駛方向朝左時，自動進行上下翻轉，防止車身顛倒
-            const cosAngle = Math.cos(pos.angle);
-            if (cosAngle < 0) {
-                ctx.scale(1, -1);
+            // 【側面視角完美對齊邏輯】
+            // 1. 根據賽道斜率給予輕微上下傾斜（模擬上坡下坡）
+            const tilt = Math.sin(pos.angle) * 0.25;
+            ctx.rotate(tilt);
+
+            // 2. 當行駛方向向左時，水平鏡射翻轉（確保車頭向前、車輪永遠貼地朝下）
+            const movingLeft = Math.cos(pos.angle) < 0;
+            if (movingLeft) {
+                ctx.scale(-1, 1);
             }
 
             const isFocused = (bus.id === focusedBusId && focusTimer > 0);
@@ -477,7 +481,7 @@
 
             drawSchoolBus(ctx, 160, 95, bus.color, bus.imgUrl);
 
-            ctx.restore(); // 恢復坐標系以繪製水平姓名標籤
+            ctx.restore(); // 恢復坐標系以繪製水平的姓名標籤
             ctx.save();
             ctx.translate(pos.x, pos.y);
 
