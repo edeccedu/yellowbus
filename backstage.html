@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黃色巴士大巡遊 — 後台舞台控制中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', 'PingFang HK', sans-serif; background-color: #020617; color: #f8fafc; }
+        .font-display { font-family: 'Noto Sans TC', 'Fredoka', sans-serif; font-weight: 900; }
+        .checkerboard {
+            background-color: #fff;
+            background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 16px 16px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 sm:p-8">
+
+    <!-- 頂部標題 -->
+    <header class="max-w-6xl w-full mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-xl mb-6">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400 text-slate-950">後台控制台</span>
+                <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 即時同步連線中</span>
+            </div>
+            <h1 class="font-display text-2xl text-white">黃色巴士大巡遊 — 舞台控制中心</h1>
+        </div>
+        <div class="flex gap-2">
+            <a href="index.html" target="_blank" class="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1.5">
+                <span>🖥️</span> 開啟大銀幕巡遊頁
+            </a>
+            <a href="upload.html" target="_blank" class="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5">
+                <span>📱</span> 開啟觀眾上傳頁
+            </a>
+        </div>
+    </header>
+
+    <!-- 控制面板主體 -->
+    <main class="max-w-6xl w-full mx-auto space-y-6">
+        <!-- 觀眾上傳連結專用區塊 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-display text-base text-white flex items-center gap-2">
+                    <span>🔗</span> 觀眾手機上傳連結 (upload.html)
+                </h3>
+                <span class="text-xs text-slate-400">請將此連結分享給現場觀眾掃描或點擊</span>
+            </div>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                <input id="uploadUrlInput" type="text" readonly class="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-yellow-400 font-mono select-all" value="">
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="copyUploadUrl()" class="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-display text-xs font-bold transition shadow">
+                        📋 複製網址
+                    </button>
+                    <a id="openUploadBtn" href="upload.html" target="_blank" class="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display text-xs font-bold transition text-center shadow">
+                        🚀 直接開啟
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 核心三大參數 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- 速度 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-display text-base text-white">⚡ 巡遊行駛速度</h3>
+                        <span id="lblSpeed" class="font-mono text-xl font-black text-yellow-400">1.0x</span>
+                    </div>
+                    <input id="ctrlSpeed" type="range" min="0" max="3.0" step="0.1" value="1.0" oninput="updateSpeed(this.value)" class="w-full accent-yellow-400 cursor-pointer">
+                </div>
+                <div class="grid grid-cols-5 gap-1 mt-4 pt-3 border-t border-slate-800 text-xs font-bold">
+                    <button onclick="updateSpeed(0)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded text-rose-300">暫停</button>
+                    <button onclick="updateSpeed(0.5)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded">0.5x</button>
+                    <button onclick="updateSpeed(1.0)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded text-yellow-300">1.0x</button>
+                    <button onclick="updateSpeed(1.8)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded">1.8x</button>
+                    <button onclick="updateSpeed(2.5)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded text-amber-300">2.5x</button>
+                </div>
+            </div>
+
+            <!-- 數量上限 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-display text-base text-white">🚌 同場數量上限</h3>
+                        <span id="lblMaxCars" class="font-mono text-xl font-black text-emerald-400">20 輛</span>
+                    </div>
+                    <input id="ctrlMax" type="range" min="1" max="30" step="1" value="20" oninput="updateMaxCars(this.value)" class="w-full accent-emerald-400 cursor-pointer">
+                </div>
+                <div class="grid grid-cols-4 gap-1 mt-4 pt-3 border-t border-slate-800 text-xs font-bold">
+                    <button onclick="updateMaxCars(5)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded">5輛</button>
+                    <button onclick="updateMaxCars(10)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded">10輛</button>
+                    <button onclick="updateMaxCars(20)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded text-emerald-300">20輛</button>
+                    <button onclick="updateMaxCars(30)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded">30輛</button>
+                </div>
+            </div>
+
+            <!-- 車輛尺寸 -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-display text-base text-white">🔍 巴士大小比例</h3>
+                        <span id="lblScale" class="font-mono text-xl font-black text-sky-400">1.0x</span>
+                    </div>
+                    <input id="ctrlScale" type="range" min="0.5" max="1.8" step="0.1" value="1.0" oninput="updateScale(this.value)" class="w-full accent-sky-400 cursor-pointer">
+                </div>
+                <div class="grid grid-cols-3 gap-1 mt-4 pt-3 border-t border-slate-800 text-xs font-bold">
+                    <button onclick="updateScale(0.7)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded">迷你 0.7x</button>
+                    <button onclick="updateScale(1.0)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded text-sky-300">標準 1.0x</button>
+                    <button onclick="updateScale(1.4)" class="py-1 bg-slate-800 hover:bg-slate-700 rounded">特大 1.4x</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批量操作列 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex gap-4 text-sm font-bold">
+                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chkLabels" checked onchange="updateSettings()" class="w-4 h-4 rounded accent-yellow-400"> 顯示車主姓名標籤</label>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="spawnDemo(3)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold">+ 3 輛示範車</button>
+                <button onclick="clearFleet()" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold">🗑️ 清空全部</button>
+            </div>
+        </div>
+
+        <!-- 車隊管理清單 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
+            <h3 class="font-display text-lg text-white mb-2">場上車隊即時管理</h3>
+            <p class="text-xs text-slate-400 mb-4">目前總計：<strong id="totalCount" class="text-white">0</strong> 輛</p>
+            <div id="fleetGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+        </div>
+    </main>
+
+    <!-- 訊息提示 -->
+    <div id="feedbackBanner" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-yellow-400/60 text-sm font-bold flex items-center gap-2.5">
+        <span id="feedbackIcon">✅</span>
+        <span id="feedbackText">已同步更新設定！</span>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'yellow_bus_parade_fleet_zh_hk_v3';
+        const SETTINGS_KEY = 'yellow_bus_parade_settings_zh_hk_v3';
+        const CHANNEL_NAME = 'yellow_bus_parade_sync_zh_hk_v3';
+        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel(CHANNEL_NAME) : null;
+
+        let fleet = [];
+        let settings = { speedMultiplier: 1.0, maxVisibleCars: 20, carScale: 1.0, showLabels: true, showJoinBanner: true };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const loc = window.location;
+            const uploadUrl = loc.protocol + '//' + loc.host + loc.pathname.replace(/\/[^/]*$/, '/') + 'upload.html';
+            document.getElementById('uploadUrlInput').value = uploadUrl;
+            document.getElementById('openUploadBtn').href = uploadUrl;
+
+            loadAll();
+            renderFleet();
+        });
+
+        function copyUploadUrl() {
+            const input = document.getElementById('uploadUrlInput');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                showFeedback('已成功複製觀眾上傳網址！', '📋');
+            } catch (e) {
+                showFeedback('複製失敗，請手動選取複製。', '⚠️');
+            }
+        }
+
+        function updateSpeed(v) {
+            settings.speedMultiplier = parseFloat(v);
+            document.getElementById('lblSpeed').textContent = settings.speedMultiplier.toFixed(1) + 'x';
+            document.getElementById('ctrlSpeed').value = settings.speedMultiplier;
+            saveAndSync();
+        }
+
+        function updateMaxCars(v) {
+            settings.maxVisibleCars = parseInt(v, 10);
+            document.getElementById('lblMaxCars').textContent = settings.maxVisibleCars + ' 輛';
+            document.getElementById('ctrlMax').value = settings.maxVisibleCars;
+            saveAndSync();
+        }
+
+        function updateScale(v) {
+            settings.carScale = parseFloat(v);
+            document.getElementById('lblScale').textContent = settings.carScale.toFixed(1) + 'x';
+            document.getElementById('ctrlScale').value = settings.carScale;
+            saveAndSync();
+        }
+
+        function updateSettings() {
+            settings.showLabels = document.getElementById('chkLabels').checked;
+            saveAndSync();
+        }
+
+        function saveAndSync() {
+            try {
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            } catch (e) {}
+            if (syncChannel) syncChannel.postMessage({ type: 'UPDATE_SETTINGS', settings });
+            showFeedback('已即時同步至大銀幕！', '⚡');
+        }
+
+        function loadAll() {
+            try {
+                const sRaw = localStorage.getItem(SETTINGS_KEY);
+                if (sRaw) {
+                    settings = { ...settings, ...JSON.parse(sRaw) };
+                    document.getElementById('ctrlSpeed').value = settings.speedMultiplier;
+                    document.getElementById('lblSpeed').textContent = settings.speedMultiplier.toFixed(1) + 'x';
+                    document.getElementById('ctrlMax').value = settings.maxVisibleCars;
+                    document.getElementById('lblMaxCars').textContent = settings.maxVisibleCars + ' 輛';
+                    document.getElementById('ctrlScale').value = settings.carScale;
+                    document.getElementById('lblScale').textContent = settings.carScale.toFixed(1) + 'x';
+                    document.getElementById('chkLabels').checked = settings.showLabels;
+                }
+                const fRaw = localStorage.getItem(STORAGE_KEY);
+                if (fRaw) fleet = JSON.parse(fRaw);
+            } catch (e) {}
+        }
+
+        function renderFleet() {
+            const grid = document.getElementById('fleetGrid');
+            document.getElementById('totalCount').textContent = fleet.length;
+            if (fleet.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-sm bg-slate-950 rounded-2xl border border-slate-800">目前沒有車輛，請點擊上方「+ 3 輛示範車」或由手機上傳！</div>`;
+                return;
+            }
+            grid.innerHTML = [...fleet].reverse().map(car => `
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center gap-3">
+                    <div class="w-16 h-12 rounded checkerboard flex items-center justify-center p-1 flex-shrink-0 overflow-hidden">
+                        <img src="${car.dataUrl}" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-display text-sm text-white truncate">${car.name}</p>
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="spotlight('${car.id}')" class="px-2 py-1 rounded bg-amber-500/20 text-amber-300 text-xs font-bold">✨ 聚焦</button>
+                            <button onclick="removeCar('${car.id}')" class="px-2 py-1 rounded bg-rose-500/20 text-rose-300 text-xs font-bold">🗑️ 刪除</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function spotlight(id) {
+            if (syncChannel) syncChannel.postMessage({ type: 'SPOTLIGHT_CAR', id });
+            showFeedback('已在大銀幕聚焦該車輛！', '✨');
+        }
+
+        function removeCar(id) {
+            fleet = fleet.filter(c => c.id !== id);
+            saveFleet();
+            renderFleet();
+            showFeedback('已刪除車輛。', '🗑️');
+        }
+
+        function clearFleet() {
+            fleet = [];
+            saveFleet();
+            renderFleet();
+            if (syncChannel) syncChannel.postMessage({ type: 'CLEAR_CARS' });
+            showFeedback('已清空所有車輛！', '🧹');
+        }
+
+        function spawnDemo(count) {
+            for (let i = 0; i < count; i++) {
+                const off = document.createElement('canvas'); off.width = 400; off.height = 200;
+                const ctx = off.getContext('2d');
+                ctx.fillStyle = '#facc15'; ctx.fillRect(40, 40, 320, 120);
+                fleet.push({
+                    id: 'demo_' + Date.now() + '_' + i,
+                    name: '示範巴士 #' + (fleet.length + 1),
+                    dataUrl: off.toDataURL(),
+                    progress: Math.random(),
+                    speed: 0.04,
+                    hidden: false
+                });
+            }
+            saveFleet();
+            renderFleet();
+            if (syncChannel) syncChannel.postMessage({ type: 'SYNC_FLEET', cars: fleet });
+            showFeedback(`已新增 ${count} 輛示範車！`, '🚌');
+        }
+
+        function saveFleet() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(fleet)); } catch (e) {}
+        }
+
+        function showFeedback(text, icon = '✅') {
+            const b = document.getElementById('feedbackBanner');
+            document.getElementById('feedbackText').textContent = text;
+            document.getElementById('feedbackIcon').textContent = icon;
+            b.classList.remove('hidden');
+            clearTimeout(b._t);
+            b._t = setTimeout(() => b.classList.add('hidden'), 3000);
+        }
+    </script>
+</body>
+</html>
