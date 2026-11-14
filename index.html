@@ -31,9 +31,6 @@
             <a href="index.html" target="_blank" class="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1.5">
                 <span>🖥️</span> 開啟大銀幕巡遊頁
             </a>
-            <a href="upload.html" target="_blank" class="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5">
-                <span>📱</span> 開啟觀眾上傳頁
-            </a>
         </div>
     </header>
 
@@ -97,7 +94,6 @@
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4">
             <div class="flex gap-4 text-sm font-bold">
                 <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chkLabels" checked onchange="updateSettings()" class="w-4 h-4 rounded accent-yellow-400"> 顯示車主姓名標籤</label>
-                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chkBanner" checked onchange="updateSettings()" class="w-4 h-4 rounded accent-yellow-400"> 顯示大銀幕左下角掃碼提示卡</label>
             </div>
             <div class="flex gap-2">
                 <button onclick="spawnDemo(3)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold">+ 3 輛示範車</button>
@@ -156,7 +152,6 @@
 
         function updateSettings() {
             settings.showLabels = document.getElementById('chkLabels').checked;
-            settings.showJoinBanner = document.getElementById('chkBanner').checked;
             saveAndSync();
         }
 
@@ -180,7 +175,6 @@
                     document.getElementById('ctrlScale').value = settings.carScale;
                     document.getElementById('lblScale').textContent = settings.carScale.toFixed(1) + 'x';
                     document.getElementById('chkLabels').checked = settings.showLabels;
-                    document.getElementById('chkBanner').checked = settings.showJoinBanner;
                 }
                 const fRaw = localStorage.getItem(STORAGE_KEY);
                 if (fRaw) fleet = JSON.parse(fRaw);
