@@ -31,11 +31,35 @@
             <a href="index.html" target="_blank" class="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1.5">
                 <span>🖥️</span> 開啟大銀幕巡遊頁
             </a>
+            <a href="upload.html" target="_blank" class="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5">
+                <span>📱</span> 開啟觀眾上傳頁
+            </a>
         </div>
     </header>
 
     <!-- 控制面板主體 -->
     <main class="max-w-6xl w-full mx-auto space-y-6">
+        <!-- 觀眾上傳連結專用區塊 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-display text-base text-white flex items-center gap-2">
+                    <span>🔗</span> 觀眾手機上傳連結 (upload.html)
+                </h3>
+                <span class="text-xs text-slate-400">請將此連結分享給現場觀眾掃描或點擊</span>
+            </div>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                <input id="uploadUrlInput" type="text" readonly class="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-yellow-400 font-mono select-all" value="">
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="copyUploadUrl()" class="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-display text-xs font-bold transition shadow">
+                        📋 複製網址
+                    </button>
+                    <a id="openUploadBtn" href="upload.html" target="_blank" class="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display text-xs font-bold transition text-center shadow">
+                        🚀 直接開啟
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- 核心三大參數 -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <!-- 速度 -->
@@ -125,9 +149,27 @@
         let settings = { speedMultiplier: 1.0, maxVisibleCars: 20, carScale: 1.0, showLabels: true, showJoinBanner: true };
 
         window.addEventListener('DOMContentLoaded', () => {
+            // 動態產生完整的 upload.html 網址
+            const loc = window.location;
+            const uploadUrl = loc.protocol + '//' + loc.host + loc.pathname.replace(/\/[^/]*$/, '/') + 'upload.html';
+            document.getElementById('uploadUrlInput').value = uploadUrl;
+            document.getElementById('openUploadBtn').href = uploadUrl;
+
             loadAll();
             renderFleet();
         });
+
+        function copyUploadUrl() {
+            const input = document.getElementById('uploadUrlInput');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                showFeedback('已成功複製觀眾上傳網址！', '📋');
+            } catch (e) {
+                showFeedback('複製失敗，請手動選取複製。', '⚠️');
+            }
+        }
 
         function updateSpeed(v) {
             settings.speedMultiplier = parseFloat(v);
