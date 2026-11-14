@@ -1,413 +1,560 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-HK">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>黃色巴士大巡遊 — 大銀幕巡遊畫面</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <title>黃色巴士大巡遊 - 大銀幕展示端</title>
     <style>
-        body {
-            font-family: 'Noto Sans TC', 'PingFang HK', sans-serif;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #0b1329; font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+        
+        /* 16:9 劇場置中舞台容器 */
+        #stage-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 100vw;
+            height: 56.25vw; /* 16:9 aspect ratio */
+            max-height: 100vh;
+            max-width: 177.78vh;
+            transform: translate(-50%, -50%);
+            background: #87CEEB;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
             overflow: hidden;
-            user-select: none;
-            background-color: #020617;
         }
-        .font-display {
-            font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
-            font-weight: 900;
+        @media (min-aspect-ratio: 16/9) {
+            #stage-container { width: 177.78vh; height: 100vh; }
         }
-        .stage-16-9 {
-            aspect-ratio: 16 / 9;
-            width: min(100vw, calc(100vh * 16 / 9));
-            height: min(100vh, calc(100vw * 9 / 16));
+
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* 頂部導覽列 / 狀態列 */
+        .top-bar {
+            position: absolute;
+            top: 20px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            pointer-events: none;
+            z-index: 10;
         }
+        .badge {
+            background: rgba(0, 0, 0, 0.6);
+            color: #ffeb3b;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 235, 59, 0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .nav-links { pointer-events: auto; display: flex; gap: 10px; }
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .nav-btn:hover { background: #ffeb3b; color: #000; transform: translateY(-2px); }
+
+        /* 全螢幕提示按鈕 */
+        .fs-btn {
+            position: absolute;
+            bottom: 20px; right: 20px;
+            background: rgba(0,0,0,0.6);
+            color: white; border: 2px solid white;
+            padding: 10px 20px; border-radius: 30px;
+            cursor: pointer; font-weight: bold; font-size: 16px;
+            z-index: 10; backdrop-filter: blur(5px);
+        }
+        .fs-btn:hover { background: white; color: black; }
     </style>
 </head>
-<body class="w-screen h-screen flex flex-col items-center justify-center p-0 m-0">
+<body>
 
-    <!-- 頂部導覽列 -->
-    <header class="absolute top-0 left-0 right-0 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 text-white px-6 py-3 flex items-center justify-between z-30">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-yellow-400 text-slate-950 flex items-center justify-center font-display text-xl">🚌</div>
-            <h1 class="font-display text-lg text-yellow-400">黃色巴士大巡遊 — 🖥️ 大銀幕巡遊端</h1>
+<div id="stage-container">
+    <div class="top-bar">
+        <div class="badge">🚌 黃色巴士大巡遊 ｜ 大銀幕展示</div>
+        <div class="nav-links">
+            <a href="upload.html" target="_blank" class="nav-btn">📱 觀眾上傳頁面</a>
+            <a href="backstage.html" target="_blank" class="nav-btn">🎛️ 後台控制台</a>
         </div>
-        <div class="flex items-center gap-2">
-            <a href="upload.html" target="_blank" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5">
-                <span>📱</span> 開啟觀眾上傳頁
-            </a>
-            <a href="backstage.html" target="_blank" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5">
-                <span>🎛️</span> 開啟後台控制台
-            </a>
-            <button onclick="toggleFullscreen()" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">
-                ⛶ 全螢幕投影
-            </button>
-        </div>
-    </header>
+    </div>
 
-    <!-- 16:9 寬螢幕賽道舞台 -->
-    <main class="stage-16-9 relative bg-emerald-600 flex items-center justify-center shadow-2xl overflow-hidden">
-        <canvas id="roadCanvas" class="block w-full h-full"></canvas>
+    <canvas id="trackCanvas"></canvas>
 
-        <!-- 即時車輛計數器 -->
-        <div class="absolute top-16 right-4 px-3 py-1 rounded-lg bg-slate-900/60 backdrop-blur text-white text-xs font-bold border border-white/15">
-            場上行駛：<span id="hudActiveCount">0</span> 輛
-        </div>
+    <button class="fs-btn" onclick="toggleFullScreen()">⛶ 全螢幕播放</button>
+</div>
 
-        <!-- 左下角觀眾上傳引導提示卡 -->
-        <div id="joinBanner" class="absolute bottom-5 left-5 z-20 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 shadow-2xl border-2 border-yellow-400 flex items-center gap-3 max-w-sm">
-            <div class="w-14 h-14 rounded-xl bg-slate-900 p-2 flex items-center justify-center text-yellow-400 text-2xl font-bold">
-                📱
-            </div>
-            <div>
-                <div class="px-2 py-0.5 rounded bg-yellow-400 text-slate-950 font-display text-[10px] mb-1 inline-block">掃描或開啟上傳頁</div>
-                <p class="font-display text-slate-900 text-sm">設計並上傳你的黃色巴士！</p>
-                <a href="upload.html" target="_blank" class="text-xs font-bold text-indigo-600 hover:underline mt-0.5 inline-block">
-                    前往手機上傳與手繪頁面 →
-                </a>
-            </div>
-        </div>
+<script>
+    const canvas = document.getElementById('trackCanvas');
+    const ctx = canvas.getContext('2d');
 
-        <!-- 新車登場橫幅 -->
-        <div id="arrivalToast" class="pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 z-30 transition-all duration-500 opacity-0 -translate-y-4">
-            <div class="bg-slate-900/90 text-white px-5 py-2.5 rounded-full border-2 border-yellow-400 shadow-2xl flex items-center gap-3">
-                <span class="text-2xl animate-bounce">🎉</span>
-                <div>
-                    <p class="text-[11px] text-yellow-300 font-bold">新巴士閃亮登場！</p>
-                    <p id="arrivalToastText" class="font-display text-sm text-white">陳小明的黃色巴士</p>
-                </div>
-            </div>
-        </div>
-    </main>
+    // 固定 16:9 內部解析度 1920x1080
+    const LOGICAL_WIDTH = 1920;
+    const LOGICAL_HEIGHT = 1080;
+    canvas.width = LOGICAL_WIDTH;
+    canvas.height = LOGICAL_HEIGHT;
 
-    <script>
-        const STAGE_W = 1920;
-        const STAGE_H = 1080;
-        const STORAGE_KEY = 'yellow_bus_parade_fleet_zh_hk_v3';
-        const SETTINGS_KEY = 'yellow_bus_parade_settings_zh_hk_v3';
-        const CHANNEL_NAME = 'yellow_bus_parade_sync_zh_hk_v3';
-        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel(CHANNEL_NAME) : null;
+    // 狀態同步與廣播
+    const bc = new BroadcastChannel('bus_parade_channel');
+    let busSpeed = 1.0;
+    let maxBuses = 12;
+    let busSizeScale = 1.0;
+    let focusedBusId = null;
+    let focusTimer = 0;
 
-        const state = {
-            speedMultiplier: 1.0,
-            carScale: 1.0,
-            maxVisibleCars: 20,
-            showLabels: true,
-            showJoinBanner: true,
-            cars: [],
-            sparkles: [],
-            roadLut: [],
-            lastFrameTime: 0
-        };
+    let buses = [];
 
-        const TRACK_WAYPOINTS_16_9 = [
-            { x: 0.12, y: 0.23 }, { x: 0.31, y: 0.14 }, { x: 0.51, y: 0.25 },
-            { x: 0.72, y: 0.15 }, { x: 0.89, y: 0.28 }, { x: 0.85, y: 0.52 },
-            { x: 0.65, y: 0.45 }, { x: 0.47, y: 0.56 }, { x: 0.66, y: 0.75 },
-            { x: 0.87, y: 0.81 }, { x: 0.67, y: 0.90 }, { x: 0.33, y: 0.86 },
-            { x: 0.12, y: 0.76 }, { x: 0.19, y: 0.50 }
+    // 預設示範巴士資料（精準匹配黃色校車圖片外觀）
+    function createDefaultBuses() {
+        return [
+            { id: 'demo_1', name: '陳小明的校車', dist: 0.0, speedMul: 1.0, color: '#fbc02d', imgUrl: null, hidden: false },
+            { id: 'demo_2', name: '開心快樂號', dist: 0.15, speedMul: 0.95, color: '#ffb300', imgUrl: null, hidden: false },
+            { id: 'demo_3', name: '陽光寶寶巴士', dist: 0.30, speedMul: 1.05, color: '#fdd835', imgUrl: null, hidden: false },
+            { id: 'demo_4', name: '林美玲的夢想號', dist: 0.45, speedMul: 0.9, color: '#ffca28', imgUrl: null, hidden: false },
+            { id: 'demo_5', name: '社區關懷號', dist: 0.60, speedMul: 1.0, color: '#ffb300', imgUrl: null, hidden: false },
+            { id: 'demo_6', name: '黃伯伯特快車', dist: 0.75, speedMul: 1.1, color: '#fbc02d', imgUrl: null, hidden: false }
         ];
+    }
 
-        const roadCanvas = document.getElementById('roadCanvas');
-        const rCtx = roadCanvas.getContext('2d');
+    function loadBusesFromStorage() {
+        const saved = localStorage.getItem('bus_parade_list');
+        if (saved) {
+            try { buses = JSON.parse(saved); } catch(e) { buses = createDefaultBuses(); }
+        } else {
+            buses = createDefaultBuses();
+            saveBusesToStorage();
+        }
+    }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadSettings();
-            loadCars();
-            if (state.cars.length === 0) spawnDemoCars(5);
+    function saveBusesToStorage() {
+        localStorage.setItem('bus_parade_list', JSON.stringify(buses));
+        bc.postMessage({ type: 'UPDATE_BUSES', buses });
+    }
 
-            buildRoadSpline(STAGE_W, STAGE_H);
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
+    loadBusesFromStorage();
 
-            if (syncChannel) {
-                syncChannel.onmessage = (e) => {
-                    const msg = e.data;
-                    if (!msg) return;
-                    if (msg.type === 'NEW_CAR') addCar(msg.car, true);
-                    else if (msg.type === 'UPDATE_SETTINGS') applySettings(msg.settings);
-                    else if (msg.type === 'SYNC_FLEET') replaceFleet(msg.cars);
-                    else if (msg.type === 'SPOTLIGHT_CAR') spotlightCar(msg.id);
-                    else if (msg.type === 'CLEAR_CARS') { state.cars = []; updateCounter(); }
-                };
+    // 接收控制台指令
+    bc.onmessage = (event) => {
+        const data = event.data;
+        if (!data) return;
+        if (data.type === 'UPDATE_SETTINGS') {
+            if (data.speed !== undefined) busSpeed = data.speed;
+            if (data.maxBuses !== undefined) maxBuses = data.maxBuses;
+            if (data.busSize !== undefined) busSizeScale = data.busSize;
+        } else if (data.type === 'UPDATE_BUSES') {
+            buses = data.buses;
+        } else if (data.type === 'FOCUS_BUS') {
+            focusedBusId = data.busId;
+            focusTimer = 360; // 6秒特效
+        } else if (data.type === 'ADD_BUS') {
+            buses.push(data.bus);
+            if (buses.length > maxBuses) buses.shift();
+            saveBusesToStorage();
+        }
+    };
+
+    // 讀取設定
+    const savedSettings = localStorage.getItem('bus_parade_settings');
+    if (savedSettings) {
+        try {
+            const st = JSON.parse(savedSettings);
+            busSpeed = st.speed ?? 1.0;
+            maxBuses = st.maxBuses ?? 12;
+            busSizeScale = st.busSize ?? 1.0;
+        } catch(e) {}
+    }
+
+    // 賽道中線貝茲曲線定義（平滑環繞 1920x1080 畫面）
+    const trackPoints = [
+        {x: 300, y: 850},
+        {x: 960, y: 920},
+        {x: 1620, y: 850},
+        {x: 1780, y: 600},
+        {x: 1600, y: 350},
+        {x: 960, y: 220},
+        {x: 320, y: 350},
+        {x: 140, y: 600}
+    ];
+
+    // 產生平滑賽道點對（Arc-length parameterized）
+    function getBezierPoint(t) {
+        // 封閉式平滑曲線插值 (Catmull-Rom / B-Spline approach)
+        const n = trackPoints.length;
+        const scaledT = t * n;
+        const i = Math.floor(scaledT) % n;
+        const nextI = (i + 1) % n;
+        const nextNextI = (i + 2) % n;
+        const prevI = (i - 1 + n) % n;
+        const localT = scaledT - i;
+
+        // Catmull-Rom spline
+        const p0 = trackPoints[prevI];
+        const p1 = trackPoints[i];
+        const p2 = trackPoints[nextI];
+        const p3 = trackPoints[nextNextI];
+
+        const tt = localT * localT;
+        const ttt = tt * localT;
+
+        const x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * localT + (2*p0.x - 5*p1.x + 4*p2.x - p3.x) * tt + (-p0.x + 3*p1.x - 3*p2.x + p3.x) * ttt);
+        const y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * localT + (2*p0.y - 5*p1.y + 4*p2.y - p3.y) * tt + (-p0.y + 3*p1.y - 3*p2.y + p3.y) * ttt);
+
+        // 切向量計算方向角
+        const dt = 0.001;
+        const nextPos = getRawPoint(t + dt > 1 ? t + dt - 1 : t + dt);
+        const dx = nextPos.x - x;
+        const dy = nextPos.y - y;
+        const angle = Math.atan2(dy, dx);
+
+        return {x, y, angle};
+    }
+
+    function getRawPoint(t) {
+        const n = trackPoints.length;
+        const scaledT = t * n;
+        const i = Math.floor(scaledT) % n;
+        const nextI = (i + 1) % n;
+        const nextNextI = (i + 2) % n;
+        const prevI = (i - 1 + n) % n;
+        const localT = scaledT - i;
+        const p0 = trackPoints[prevI], p1 = trackPoints[i], p2 = trackPoints[nextI], p3 = trackPoints[nextNextI];
+        const tt = localT * localT, ttt = tt * localT;
+        const x = 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * localT + (2*p0.x - 5*p1.x + 4*p2.x - p3.x) * tt + (-p0.x + 3*p1.x - 3*p2.x + p3.x) * ttt);
+        const y = 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * localT + (2*p0.y - 5*p1.y + 4*p2.y - p3.y) * tt + (-p0.y + 3*p1.y - 3*p2.y + p3.y) * ttt);
+        return {x, y};
+    }
+
+    // 繪製精準的黃色校車向量圖形 (配合圖片結構)
+    const busImageCache = {};
+    function drawSchoolBus(ctx, width, height, customColor, imgUrl) {
+        ctx.save();
+        ctx.scale(width / 220, height / 130); // 基準尺寸 220x130
+
+        if (imgUrl) {
+            if (!busImageCache[imgUrl]) {
+                const img = new Image();
+                img.src = imgUrl;
+                busImageCache[imgUrl] = img;
             }
-            window.addEventListener('storage', (e) => {
-                if (e.key === STORAGE_KEY) loadCars(true);
-                if (e.key === SETTINGS_KEY) loadSettings();
-            });
+            const img = busImageCache[imgUrl];
+            if (img.complete && img.naturalWidth > 0) {
+                ctx.drawImage(img, -110, -65, 220, 130);
+                ctx.restore();
+                return;
+            }
+        }
 
-            requestAnimationFrame(animLoop);
+        // 車身主體顏色
+        const bodyColor = customColor || '#fbc02d';
+
+        // 1. 車頂行李架 / 頂蓋
+        ctx.fillStyle = '#546e7a';
+        ctx.beginPath();
+        ctx.roundRect(-50, -60, 130, 14, 4);
+        ctx.fill();
+
+        // 2. 車身主體輪廓（符合經典校車弧形引擎蓋與車體）
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(-90, 45);
+        ctx.lineTo(-90, 20);
+        ctx.lineTo(-100, -5);    // 引擎蓋前緣
+        ctx.lineTo(-75, -45);    // 前擋風玻璃斜角
+        ctx.lineTo(80, -48);     // 車頂線
+        ctx.quadraticCurveTo(105, -48, 105, -20);
+        ctx.lineTo(105, 45);     // 車尾
+        ctx.closePath();
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#37474f';
+        ctx.stroke();
+
+        // 3. 側邊裝飾雙條紋 (經典校車棕色腰線)
+        ctx.fillStyle = '#4e342e';
+        ctx.fillRect(-90, 5, 200, 7);
+        ctx.fillRect(-90, 20, 200, 6);
+
+        // 4. 車窗（4扇經典方窗與前擋風玻璃）
+        // 前擋風玻璃
+        ctx.fillStyle = '#b3e5fc';
+        ctx.beginPath();
+        ctx.moveTo(-73, -40);
+        ctx.lineTo(-52, -40);
+        ctx.lineTo(-52, 2);
+        ctx.lineTo(-88, 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#37474f';
+        ctx.stroke();
+
+        // 4扇側窗
+        const windowWidth = 24;
+        const windowHeight = 26;
+        const windowY = -38;
+        const windowXStarts = [-40, -10, 20, 50];
+        
+        windowXStarts.forEach(wx => {
+            ctx.fillStyle = '#b3e5fc';
+            ctx.fillRect(wx, windowY, windowWidth, windowHeight);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#37474f';
+            ctx.strokeRect(wx, windowY, windowWidth, windowHeight);
         });
 
-        function resizeCanvas() {
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            roadCanvas.width = Math.round(window.innerWidth * dpr);
-            roadCanvas.height = Math.round(window.innerHeight * dpr);
-        }
+        // 5. 前視鏡
+        ctx.fillStyle = '#37474f';
+        ctx.fillRect(-85, -30, 8, 18);
+        ctx.fillRect(-89, -35, 12, 6);
 
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            } else if (document.exitFullscreen) {
-                document.exitFullscreen().catch(() => {});
+        // 6. 車底儲物箱/防撞桿
+        ctx.fillStyle = '#90a4ae';
+        ctx.fillRect(-25, 32, 50, 15);
+        ctx.fillRect(-102, 45, 207, 7); // 前後保險桿
+        ctx.fillRect(85, 22, 15, 6);   // 車尾標誌
+
+        // 7. 輪胎 (前後大車輪連白色輪圈)
+        const wheels = [-55, 55];
+        wheels.forEach(wx => {
+            // 外框黑輪胎
+            ctx.fillStyle = '#212121';
+            ctx.beginPath();
+            ctx.arc(wx, 50, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#424242';
+            ctx.stroke();
+
+            // 白色內輪圈
+            ctx.fillStyle = '#f5f5f5';
+            ctx.beginPath();
+            ctx.arc(wx, 50, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#616161';
+            ctx.stroke();
+        });
+
+        ctx.restore();
+    }
+
+    // 背景風景繪製
+    function drawBackground() {
+        // 天空漸層
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, LOGICAL_HEIGHT);
+        skyGrad.addColorStop(0, '#4fc3f7');
+        skyGrad.addColorStop(0.7, '#b3e5fc');
+        skyGrad.addColorStop(1, '#e1f5fe');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+
+        // 遠山
+        ctx.fillStyle = '#81c784';
+        ctx.beginPath();
+        ctx.moveTo(0, 750);
+        ctx.lineTo(0, 500);
+        ctx.quadraticCurveTo(300, 320, 650, 500);
+        ctx.quadraticCurveTo(1100, 300, 1500, 480);
+        ctx.quadraticCurveTo(1750, 400, 1920, 520);
+        ctx.lineTo(1920, 750);
+        ctx.fill();
+
+        // 綠野草地
+        ctx.fillStyle = '#aed581';
+        ctx.fillRect(0, 700, LOGICAL_WIDTH, LOGICAL_HEIGHT - 700);
+
+        // 藍色大湖泊
+        ctx.fillStyle = '#29b6f6';
+        ctx.beginPath();
+        ctx.ellipse(960, 600, 380, 140, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = '#0288d1';
+        ctx.stroke();
+
+        // 小木屋與風車裝飾
+        drawCottage(400, 520);
+        drawWindmill(1480, 480);
+
+        // 賽道外邊界與草地跑道
+        ctx.beginPath();
+        for (let t = 0; t <= 1; t += 0.002) {
+            const pt = getBezierPoint(t);
+            if (t === 0) ctx.moveTo(pt.x, pt.y);
+            else ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.closePath();
+        ctx.lineWidth = 140;
+        ctx.strokeStyle = '#795548'; // 賽道外框/泥土邊界
+        ctx.stroke();
+
+        ctx.lineWidth = 120;
+        ctx.strokeStyle = '#e0e0e0'; // 灰色柏油路面
+        ctx.stroke();
+
+        // 賽道中心虛線
+        ctx.lineWidth = 6;
+        ctx.setLineDash([25, 25]);
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+        ctx.setLineDash([]); // 重設虛線
+
+        // 起點 / 終點拱門
+        drawStartArch(300, 850);
+    }
+
+    function drawCottage(x, y) {
+        ctx.save();
+        ctx.translate(x, y);
+        // 屋身
+        ctx.fillStyle = '#ffccbc';
+        ctx.fillRect(-35, -20, 70, 45);
+        // 屋頂
+        ctx.fillStyle = '#d32f2f';
+        ctx.beginPath();
+        ctx.moveTo(-45, -20);
+        ctx.lineTo(0, -60);
+        ctx.lineTo(45, -20);
+        ctx.closePath();
+        ctx.fill();
+        // 門窗
+        ctx.fillStyle = '#5d4037';
+        ctx.fillRect(-10, 5, 20, 20);
+        ctx.fillRect(-28, -10, 14, 14);
+        ctx.fillRect(14, -10, 14, 14);
+        ctx.restore();
+    }
+
+    function drawWindmill(x, y) {
+        ctx.save();
+        ctx.translate(x, y);
+        // 塔身
+        ctx.fillStyle = '#eceff1';
+        ctx.beginPath();
+        ctx.moveTo(-25, 80);
+        ctx.lineTo(-12, -40);
+        ctx.lineTo(12, -40);
+        ctx.lineTo(25, 80);
+        ctx.closePath();
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#37474f';
+        ctx.stroke();
+
+        // 風車葉片旋轉動畫
+        const angle = Date.now() * 0.0015;
+        ctx.translate(0, -35);
+        ctx.rotate(angle);
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 4; i++) {
+            ctx.rotate(Math.PI / 2);
+            ctx.beginPath();
+            ctx.rect(0, -6, 55, 12);
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    function drawStartArch(x, y) {
+        ctx.save();
+        ctx.translate(x, y);
+        // 拱門左右支柱
+        ctx.fillStyle = '#1565c0';
+        ctx.fillRect(-70, -110, 20, 110);
+        ctx.fillRect(50, -110, 20, 110);
+        // 頂部橫額
+        ctx.fillStyle = '#0d47a1';
+        ctx.fillRect(-90, -140, 180, 40);
+        ctx.fillStyle = '#ffeb3b';
+        ctx.font = 'bold 22px "Microsoft JhengHei"';
+        ctx.textAlign = 'center';
+        ctx.fillText('🏁 巡遊起終點', 0, -113);
+        ctx.restore();
+    }
+
+    // 主循環渲染
+    function updateAndRender() {
+        ctx.clearRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+
+        // 1. 繪製背景與賽道
+        drawBackground();
+
+        // 2. 更新與繪製車隊
+        const activeBuses = buses.filter(b => !b.hidden).slice(0, maxBuses);
+        const speedStep = 0.00012 * busSpeed;
+
+        activeBuses.forEach((bus, index) => {
+            if (bus.dist === undefined) {
+                bus.dist = (index / Math.max(1, activeBuses.length));
             }
-        }
+            bus.dist += speedStep * (bus.speedMul || 1.0);
+            if (bus.dist > 1.0) bus.dist -= 1.0;
 
-        function getCatmullRom(pts, t) {
-            const n = pts.length;
-            const s = ((t % 1) + 1) % 1 * n;
-            const i1 = Math.floor(s) % n;
-            const f = s - Math.floor(s);
-            const p0 = pts[(i1 - 1 + n) % n], p1 = pts[i1], p2 = pts[(i1 + 1) % n], p3 = pts[(i1 + 2) % n];
-            const f2 = f * f, f3 = f2 * f;
-            return {
-                x: 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * f + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * f2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * f3),
-                y: 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * f + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * f2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * f3)
-            };
-        }
-
-        function buildRoadSpline(w, h) {
-            const pts = TRACK_WAYPOINTS_16_9.map(p => ({ x: p.x * w, y: p.y * h }));
-            const SAMPLES = 1000;
-            const raw = [];
-            let cumLen = 0, prev = getCatmullRom(pts, 0);
-            raw.push({ x: prev.x, y: prev.y, dist: 0 });
-            for (let i = 1; i <= SAMPLES; i++) {
-                const pt = getCatmullRom(pts, i / SAMPLES);
-                cumLen += Math.hypot(pt.x - prev.x, pt.y - prev.y);
-                raw.push({ x: pt.x, y: pt.y, dist: cumLen });
-                prev = pt;
-            }
-            const COUNT = 800;
-            const lut = [];
-            let rawIdx = 0;
-            for (let i = 0; i < COUNT; i++) {
-                const target = (i / COUNT) * cumLen;
-                while (rawIdx < raw.length - 2 && raw[rawIdx + 1].dist < target) rawIdx++;
-                const a = raw[rawIdx], b = raw[rawIdx + 1];
-                const alpha = (target - a.dist) / Math.max(0.0001, b.dist - a.dist);
-                lut.push({ x: a.x + (b.x - a.x) * alpha, y: a.y + (b.y - a.y) * alpha });
-            }
-            for (let i = 0; i < COUNT; i++) {
-                const pPrev = lut[(i - 2 + COUNT) % COUNT], pNext = lut[(i + 2) % COUNT];
-                lut[i].angle = Math.atan2(pNext.y - pPrev.y, pNext.x - pPrev.x);
-            }
-            state.roadLut = lut;
-        }
-
-        function sampleRoad(prog) {
-            const lut = state.roadLut;
-            if (!lut.length) return { x: 0, y: 0, angle: 0 };
-            const n = lut.length, exact = (((prog % 1) + 1) % 1) * n;
-            const i0 = Math.floor(exact) % n, i1 = (i0 + 1) % n, f = exact - Math.floor(exact);
-            let diff = lut[i1].angle - lut[i0].angle;
-            while (diff > Math.PI) diff -= Math.PI * 2;
-            while (diff < -Math.PI) diff += Math.PI * 2;
-            return { x: lut[i0].x + (lut[i1].x - lut[i0].x) * f, y: lut[i0].y + (lut[i1].y - lut[i0].y) * f, angle: lut[i0].angle + diff * f };
-        }
-
-        function animLoop(timestamp) {
-            if (!state.lastFrameTime) state.lastFrameTime = timestamp;
-            const dt = Math.min((timestamp - state.lastFrameTime) / 1000, 0.1);
-            state.lastFrameTime = timestamp;
-            const tSec = timestamp / 1000;
-
-            const active = state.cars.filter(c => !c.hidden).slice(-state.maxVisibleCars);
-            active.forEach(c => {
-                c.progress = (c.progress + c.speed * state.speedMultiplier * dt) % 1;
-                if (c.highlightTimer > 0) c.highlightTimer = Math.max(0, c.highlightTimer - dt);
-            });
-
-            state.sparkles = state.sparkles.filter(sp => {
-                sp.life -= dt;
-                sp.x += sp.vx * dt;
-                sp.y += sp.vy * dt;
-                return sp.life > 0;
-            });
-
-            rCtx.save();
-            const sx = roadCanvas.width / STAGE_W, sy = roadCanvas.height / STAGE_H;
-            rCtx.scale(sx, sy);
-
-            const grad = rCtx.createLinearGradient(0, 0, STAGE_W, STAGE_H);
-            grad.addColorStop(0, '#4ade80'); grad.addColorStop(1, '#16a34a');
-            rCtx.fillStyle = grad; rCtx.fillRect(0, 0, STAGE_W, STAGE_H);
-
-            drawLake(rCtx, STAGE_W * 0.28, STAGE_H * 0.64, 150, tSec);
-            drawLake(rCtx, STAGE_W * 0.72, STAGE_H * 0.31, 100, tSec + 1);
-            drawRoad(rCtx);
-
-            const sorted = active.map(car => ({ car, pose: sampleRoad(car.progress) })).sort((a, b) => a.pose.y - b.pose.y);
-            sorted.forEach(({ car, pose }) => drawCar(rCtx, car, pose, tSec));
-
-            state.sparkles.forEach(sp => {
-                rCtx.save();
-                rCtx.globalAlpha = Math.min(1, sp.life * 1.5);
-                rCtx.fillStyle = sp.color;
-                rCtx.beginPath(); rCtx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2); rCtx.fill();
-                rCtx.restore();
-            });
-
-            rCtx.restore();
-            requestAnimationFrame(animLoop);
-        }
-
-        function drawLake(ctx, cx, cy, r, t) {
-            ctx.fillStyle = '#38bdf8';
-            ctx.beginPath(); ctx.ellipse(cx, cy, r, r * 0.7, 0, 0, Math.PI * 2); ctx.fill();
-        }
-
-        function drawRoad(ctx) {
-            const lut = state.roadLut;
-            if (!lut.length) return;
+            const pos = getBezierPoint(bus.dist);
             ctx.save();
-            ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-            ctx.beginPath(); ctx.moveTo(lut[0].x, lut[0].y);
-            for (let i = 1; i < lut.length; i++) ctx.lineTo(lut[i].x, lut[i].y);
-            ctx.closePath();
+            ctx.translate(pos.x, pos.y);
+            ctx.rotate(pos.angle);
 
-            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 118; ctx.stroke();
-            ctx.strokeStyle = '#facc15'; ctx.setLineDash([24, 24]); ctx.lineWidth = 118; ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.strokeStyle = '#334155'; ctx.lineWidth = 104; ctx.stroke();
-            ctx.strokeStyle = 'rgba(254,240,138,0.8)'; ctx.setLineDash([28, 28]); ctx.lineWidth = 6; ctx.stroke();
-            ctx.restore();
-        }
-
-        function drawCar(ctx, car, pose, tSec) {
-            const baseW = 148 * state.carScale;
-            const aspect = (car.img && car.img.width && car.img.height) ? (car.img.height / car.img.width) : 0.56;
-            const w = baseW, h = baseW * Math.min(Math.max(aspect, 0.4), 0.9);
-            const bounce = Math.sin(tSec * 12 + (car.phase || 0)) * 2.5;
-
-            ctx.save();
-            ctx.translate(pose.x, pose.y);
-
-            if (car.highlightTimer > 0) {
-                ctx.beginPath(); ctx.arc(0, 0, w * 0.7, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(250,204,21,0.4)'; ctx.fill();
-            }
-
-            ctx.save();
-            ctx.rotate(pose.angle);
-            const norm = ((pose.angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-            if (norm > Math.PI * 0.5 && norm < Math.PI * 1.5) ctx.scale(1, -1);
-
-            if (car.img && car.img.complete && car.img.naturalWidth > 0) {
-                ctx.drawImage(car.img, -w / 2, -h / 2 + bounce, w, h);
+            // 檢查是否為聚焦車輛
+            const isFocused = (bus.id === focusedBusId && focusTimer > 0);
+            if (isFocused) {
+                ctx.scale(1.4 * busSizeScale, 1.4 * busSizeScale);
+                // 閃耀光環特效
+                ctx.beginPath();
+                ctx.arc(0, 0, 85, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 235, 59, 0.4)';
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#ff9800';
+                ctx.stroke();
             } else {
-                ctx.fillStyle = '#facc15'; ctx.fillRect(-w / 2, -h / 2, w, h);
+                ctx.scale(busSizeScale, busSizeScale);
             }
+
+            // 繪製黃色校車
+            drawSchoolBus(ctx, 160, 95, bus.color, bus.imgUrl);
+
+            // 姓名標籤（保持水平不旋轉）
+            ctx.rotate(-pos.angle);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.beginPath();
+            ctx.roundRect(-70, -75, 140, 30, 15);
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ffeb3b';
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 15px "Microsoft JhengHei"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(bus.name || '黃色巴士', 0, -60);
+
             ctx.restore();
+        });
 
-            if (state.showLabels && car.name) {
-                ctx.font = '700 20px "Noto Sans TC", sans-serif';
-                const tw = ctx.measureText(car.name).width + 28, th = 34, ly = -h * 0.68 - 16;
-                ctx.fillStyle = 'rgba(15,23,42,0.9)';
-                ctx.beginPath(); ctx.roundRect(-tw / 2, ly - th / 2, tw, th, 17); ctx.fill();
-                ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(car.name, 0, ly + 1);
-            }
-            ctx.restore();
-        }
+        if (focusTimer > 0) focusTimer--;
 
-        function addCar(rec, isNew = false) {
-            if (state.cars.some(c => c.id === rec.id)) return;
-            const img = new Image();
-            img.src = rec.dataUrl;
-            state.cars.push({ ...rec, img, highlightTimer: isNew ? 6.0 : 0 });
-            updateCounter();
-            if (isNew) {
-                triggerToast(rec.name);
-                triggerSparkles(rec.progress);
+        requestAnimationFrame(updateAndRender);
+    }
+
+    requestAnimationFrame(updateAndRender);
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {});
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
             }
         }
-
-        function replaceFleet(list) {
-            state.cars = list.map(item => {
-                const existing = state.cars.find(c => c.id === item.id);
-                if (existing) return { ...existing, ...item };
-                const img = new Image();
-                img.src = item.dataUrl;
-                return { ...item, img, highlightTimer: 0 };
-            });
-            updateCounter();
-        }
-
-        function spotlightCar(id) {
-            const c = state.cars.find(x => x.id === id);
-            if (c) {
-                c.hidden = false;
-                c.highlightTimer = 6.0;
-                triggerSparkles(c.progress);
-                triggerToast('✨ 特寫：' + c.name);
-            }
-        }
-
-        function triggerSparkles(prog) {
-            const pose = sampleRoad(prog);
-            for (let i = 0; i < 28; i++) {
-                const ang = Math.random() * Math.PI * 2, spd = 70 + Math.random() * 120;
-                state.sparkles.push({ x: pose.x, y: pose.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, life: 1.2, color: '#facc15', size: 6 });
-            }
-        }
-
-        function triggerToast(name) {
-            const t = document.getElementById('arrivalToast');
-            document.getElementById('arrivalToastText').textContent = name;
-            t.classList.remove('opacity-0', '-translate-y-4');
-            clearTimeout(t._timer);
-            t._timer = setTimeout(() => t.classList.add('opacity-0', '-translate-y-4'), 4000);
-        }
-
-        function updateCounter() {
-            const active = state.cars.filter(c => !c.hidden).slice(-state.maxVisibleCars);
-            document.getElementById('hudActiveCount').textContent = active.length;
-        }
-
-        function loadCars(replace = false) {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) {
-                    const list = JSON.parse(raw);
-                    if (replace) replaceFleet(list);
-                    else list.forEach(item => addCar(item, false));
-                }
-            } catch (e) {}
-        }
-
-        function loadSettings() {
-            try {
-                const raw = localStorage.getItem(SETTINGS_KEY);
-                if (raw) {
-                    const s = JSON.parse(raw);
-                    if (typeof s.speedMultiplier === 'number') state.speedMultiplier = s.speedMultiplier;
-                    if (typeof s.carScale === 'number') state.carScale = s.carScale;
-                    if (typeof s.maxVisibleCars === 'number') state.maxVisibleCars = s.maxVisibleCars;
-                    if (typeof s.showLabels === 'boolean') state.showLabels = s.showLabels;
-                    if (typeof s.showJoinBanner === 'boolean') {
-                        state.showJoinBanner = s.showJoinBanner;
-                        document.getElementById('joinBanner').classList.toggle('hidden', !s.showJoinBanner);
-                    }
-                }
-            } catch (e) {}
-        }
-
-        function spawnDemoCars(count) {
-            for (let i = 0; i < count; i++) {
-                const off = document.createElement('canvas'); off.width = 400; off.height = 200;
-                const ctx = off.getContext('2d');
-                ctx.fillStyle = '#facc15'; ctx.fillRect(40, 40, 320, 120);
-                addCar({
-                    id: 'demo_' + i,
-                    name: '示範巴士 #' + (i + 1),
-                    dataUrl: off.toDataURL(),
-                    progress: i / count,
-                    speed: 0.04,
-                    phase: i
-                }, false);
-            }
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
